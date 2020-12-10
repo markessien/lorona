@@ -1,0 +1,87 @@
+
+---
+# Configuration file for Lorona - a very simple container monitoring solution
+
+container_name: user_auth
+container_support: product@hotels.ng
+container_description: "For user authentication"
+
+publishing:
+  lorona:
+    publish_url: https://lorona.io/publish
+    publish_key: zXfMnbnKr9MWA6
+    publish_secret: GgmX6vPLwaWBX5
+    publish_interval: 1m
+  new_relic:
+    publish_url: https://newrelic.com/publish
+
+listening:
+  prometheus:
+    url: 0.0.0.0:5000
+    format: 2
+  json:
+    url: 0.0.0.0:5001
+
+uptime:
+  endpoint: http://0.0.0.0:45246
+  general_status_check: http://0.0.0.0:45246/hello
+  test_endpoints:
+    - url: http://0.0.0.0:45246/getimages
+      expected_status: 200
+      get_token: http://0.0.0.0:45246/retrieve_token
+    - url: http://0.0.0.0:45246/getphotos
+      expected_status: 200
+      search_for: "photos"
+      get_token: http://0.0.0.0:45246/retrieve_token
+    - url: http://0.0.0.0:45246/try
+
+nginx:
+  log_filename: /var/www/nginx.log
+  errors:
+    minimum_log_level: ERROR
+    alert_level: 1
+    alert_interval: hourly
+  404:
+    alert_level: 1
+    alert_interval: hourly
+  5xx:
+    alert_level: 1
+    alert_interval: 5mins
+
+laravel:
+  log_filename: log/laravel.log
+  minimum_log_level: WARNING
+
+mysql:
+  log_filename: /var/www/mysql.log
+  slow_query:
+    slow_query_log: /var/www/slow.log
+    alert_level: 10s
+
+drivespace:
+  alert_level: 50GB
+  alert_interval: daily
+  locations:
+    - /var/www
+    - /etc/nginx
+
+cpu:
+  alert_level: 70%
+  alert_interval: daily
+
+ram:
+  alert_level: 70%
+  alert_interval: daily
+
+alerts:
+  emails:
+    - mark@hotels.ng
+    - ikay@hotels.ng
+
+  slack:
+    token: YC4YN8LRJ8RkEL
+    key: YC4YN8LRJ8RkEL
+    url: https://api.slack.com/notify
+
+
+...
