@@ -19,6 +19,7 @@ type Settings struct {
 	Uptime struct {
 		Endpoint           string `yaml:"endpoint"`
 		GeneralStatusCheck string `yaml:"general_status_check"`
+		CheckInterval      string `yaml:"check_interval"`
 	} `yaml:"uptime"`
 }
 
@@ -39,6 +40,11 @@ func LoadSettings(settingsFile string) (*Settings, error) {
 	// Start YAML decoding from file
 	if err := d.Decode(&settings); err != nil {
 		return nil, err
+	}
+
+	// Set sensible defaults
+	if len(settings.Uptime.CheckInterval) <= 0 {
+		settings.Uptime.CheckInterval = "5m" // 5 minutes
 	}
 
 	return settings, nil

@@ -23,8 +23,9 @@ listening:
     url: 0.0.0.0:5001
 
 uptime:
-  endpoint: http://0.0.0.0:45246
+  endpoint: http://google.com
   general_status_check: http://0.0.0.0:45246/hello
+  check_interval: 5s
   test_endpoints:
     - url: http://0.0.0.0:45246/getimages
       expected_status: 200
