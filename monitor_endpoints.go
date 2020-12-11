@@ -1,58 +1,69 @@
 package main
 
 import (
-	"fmt"
 	"log"
 	"net/http"
-	"strconv"
 	"time"
 )
 
+type UptimeResponse struct {
+	Endpoint      string
+	ResponseValue string
+	ResponseCode  int
+	ResponseTime  time.Duration
+	PageTitle     string
+}
+
 var stopEndpointMonitoring bool
 
-func StartEndpointMonitoring(settings *Settings) {
+// This is called to start the endpoint monitoring. The results
+func StartEndpointMonitoring(settings *Settings, uptimes chan UptimeResponse) {
 
-	// Create channel so we can use it to stop the processes
 	stopEndpointMonitoring = false
 
-	// Check if we need general endpoint monitoring
-	if len(settings.Uptime.Endpoint) > 0 {
-		duration, err := time.ParseDuration(settings.Uptime.CheckInterval)
-		if err != nil {
-			log.Fatal(err)
+	for _, uptimeRequest := range settings.UptimeRequestList {
+
+		if len(uptimeRequest.Endpoint) > 0 {
+			duration, err := time.ParseDuration(uptimeRequest.CheckInterval)
+			if err != nil {
+				print("Could not monitor endpoint: " + uptimeRequest.Endpoint + " - Check duration")
+				log.Fatal(err)
+			} else {
+				go monitorEndpoint(uptimeRequest.Endpoint, duration, uptimes)
+			}
 		}
 
-		go monitorGeneralEndpoint(settings.Uptime.Endpoint, duration)
 	}
-
 }
 
 func StopEndpointMonitoring() {
 	stopEndpointMonitoring = true
 }
 
-func monitorGeneralEndpoint(endpointUrl string, interval time.Duration) {
+func monitorEndpoint(endpointUrl string, interval time.Duration, uptimes chan UptimeResponse) {
 
-	fmt.Printf("Entered monitoring routine")
-
-	fmt.Printf("Got endpoint: " + endpointUrl)
 	for {
-		response, err := http.Head(endpointUrl)
+		var uptime UptimeResponse
+		uptime.Endpoint = endpointUrl
+
+		// Call the endpoint
+		start := time.Now()
+		response, err := http.Head(uptime.Endpoint)
+		elapsed := time.Since(start)
+
 		if err != nil {
-			log.Fatal("Error: Unable to download URL (", endpointUrl, ") with error: ", err)
+			uptime.ResponseCode = 598
+			uptime.ResponseTime = 0
+		} else {
+			uptime.ResponseCode = response.StatusCode
+			uptime.ResponseTime = elapsed
 		}
-
-		fmt.Printf("Requested " + strconv.Itoa(response.StatusCode))
-
-		if response.StatusCode != http.StatusOK {
-			log.Fatal("Error: HTTP Status = ", response.Status)
-		}
-
-		time.Sleep(interval)
 
 		if stopEndpointMonitoring == true {
-			fmt.Printf("Stopping General Monitoring")
 			return
 		}
+
+		uptimes <- uptime
+		time.Sleep(interval)
 	}
 }

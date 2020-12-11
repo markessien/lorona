@@ -1,0 +1,28 @@
+[2020-09-28 13:31:39] production.ERROR: DaveJamesMiller\Breadcrumbs\BreadcrumbsServiceProvider::registerBreadcrumbs(): Failed opening required '/var/www/routes/breadcrumbs.php' (include_path='.:/usr/share/php') {"exception":"[object] (Symfony\\Component\\Debug\\Exception\\FatalErrorException(code: 64): DaveJamesMiller\\Breadcrumbs\\BreadcrumbsServiceProvider::registerBreadcrumbs(): Failed opening required '/var/www/routes/breadcrumbs.php' (include_path='.:/usr/share/php') at /var/www/staging.ci.timbu.com/jenkins/workspace/rehub/vendor/davejamesmiller/laravel-breadcrumbs/src/BreadcrumbsServiceProvider.php:92)
+[stacktrace]
+#0 {main}
+"}
+[2020-09-28 13:32:16] production.ERROR: DaveJamesMiller\Breadcrumbs\BreadcrumbsServiceProvider::registerBreadcrumbs(): Failed opening required '/var/www/routes/breadcrumbs.php' (include_path='.:/usr/share/php') {"exception":"[object] (Symfony\\Component\\Debug\\Exception\\FatalErrorException(code: 64): DaveJamesMiller\\Breadcrumbs\\BreadcrumbsServiceProvider::registerBreadcrumbs(): Failed opening required '/var/www/routes/breadcrumbs.php' (include_path='.:/usr/share/php') at /var/www/staging.ci.timbu.com/jenkins/workspace/rehub/vendor/davejamesmiller/laravel-breadcrumbs/src/BreadcrumbsServiceProvider.php:92)
+[stacktrace]
+#0 {main}
+"}
+[2020-09-28 13:33:23] production.ERROR: DaveJamesMiller\Breadcrumbs\BreadcrumbsServiceProvider::registerBreadcrumbs(): Failed opening required '/var/www/routes/breadcrumbs.php' (include_path='.:/usr/share/php') {"exception":"[object] (Symfony\\Component\\Debug\\Exception\\FatalErrorException(code: 64): DaveJamesMiller\\Breadcrumbs\\BreadcrumbsServiceProvider::registerBreadcrumbs(): Failed opening required '/var/www/routes/breadcrumbs.php' (include_path='.:/usr/share/php') at /var/www/staging.ci.timbu.com/jenkins/workspace/rehub/vendor/davejamesmiller/laravel-breadcrumbs/src/BreadcrumbsServiceProvider.php:92)
+[stacktrace]
+#0 {main}
+"}
+[2020-09-28 13:33:31] production.ERROR: DaveJamesMiller\Breadcrumbs\BreadcrumbsServiceProvider::registerBreadcrumbs(): Failed opening required '/var/www/routes/breadcrumbs.php' (include_path='.:/usr/share/php') {"exception":"[object] (Symfony\\Component\\Debug\\Exception\\FatalErrorException(code: 64): DaveJamesMiller\\Breadcrumbs\\BreadcrumbsServiceProvider::registerBreadcrumbs(): Failed opening required '/var/www/routes/breadcrumbs.php' (include_path='.:/usr/share/php') at /var/www/staging.ci.timbu.com/jenkins/workspace/rehub/vendor/davejamesmiller/laravel-breadcrumbs/src/BreadcrumbsServiceProvider.php:92)
+[stacktrace]
+#0 {main}
+"}
+[2020-09-28 13:33:36] production.ERROR: DaveJamesMiller\Breadcrumbs\BreadcrumbsServiceProvider::registerBreadcrumbs(): Failed opening required '/var/www/routes/breadcrumbs.php' (include_path='.:/usr/share/php') {"exception":"[object] (Symfony\\Component\\Debug\\Exception\\FatalErrorException(code: 64): DaveJamesMiller\\Breadcrumbs\\BreadcrumbsServiceProvider::registerBreadcrumbs(): Failed opening required '/var/www/routes/breadcrumbs.php' (include_path='.:/usr/share/php') at /var/www/staging.ci.timbu.com/jenkins/workspace/rehub/vendor/davejamesmiller/laravel-breadcrumbs/src/BreadcrumbsServiceProvider.php:92)
+[stacktrace]
+#0 {main}
+"}
+[2020-09-28 14:23:17] production.ERROR: DaveJamesMiller\Breadcrumbs\BreadcrumbsServiceProvider::registerBreadcrumbs(): Failed opening required '/var/www/routes/breadcrumbs.php' (include_path='.:/usr/share/php') {"exception":"[object] (Symfony\\Component\\Debug\\Exception\\FatalErrorException(code: 64): DaveJamesMiller\\Breadcrumbs\\BreadcrumbsServiceProvider::registerBreadcrumbs(): Failed opening required '/var/www/routes/breadcrumbs.php' (include_path='.:/usr/share/php') at /var/www/staging.ci.timbu.com/jenkins/workspace/rehub/vendor/davejamesmiller/laravel-breadcrumbs/src/BreadcrumbsServiceProvider.php:92)
+[stacktrace]
+#0 {main}
+"}
+[2020-09-28 14:24:11] production.ERROR: DaveJamesMiller\Breadcrumbs\BreadcrumbsServiceProvider::registerBreadcrumbs(): Failed opening required '/var/www/routes/breadcrumbs.php' (include_path='.:/usr/share/php') {"exception":"[object] (Symfony\\Component\\Debug\\Exception\\FatalErrorException(code: 64): DaveJamesMiller\\Breadcrumbs\\BreadcrumbsServiceProvider::registerBreadcrumbs(): Failed opening required '/var/www/routes/breadcrumbs.php' (include_path='.:/usr/share/php') at /var/www/staging.ci.timbu.com/jenkins/workspace/rehub/vendor/davejamesmiller/laravel-breadcrumbs/src/BreadcrumbsServiceProvider.php:92)
+[stacktrace]
+#0 {main}
+"}

@@ -3,38 +3,34 @@
 # Configuration file for Lorona - a very simple container monitoring solution
 
 container_name: user_auth
-container_support: product@hotels.ng
+container_support: mark@hng.tech
 container_description: "For user authentication"
 
-publishing:
+push_metrics:
   lorona:
-    publish_url: https://lorona.io/publish
-    publish_key: zXfMnbnKr9MWA6
-    publish_secret: GgmX6vPLwaWBX5
+    your_unique_page: https://lorona.io/hngtech # you can select any free page. It will automatically be created
+    your_password: jcfRxQ7WXMFnES6TUizphW5DzhaTqNTiyckc2DgrdxYeHowo3PdLjeez3NFinydn # minimum 64 characters
     publish_interval: 1m
-  new_relic:
-    publish_url: https://newrelic.com/publish
 
-listening:
-  prometheus:
+expose_metrics:
+  prometheus_format:
     url: 0.0.0.0:5000
     format: 2
-  json:
+  json_format:
     url: 0.0.0.0:5001
 
 uptime:
-  endpoint: http://google.com
-  general_status_check: http://0.0.0.0:45246/hello
-  check_interval: 5s
-  test_endpoints:
-    - url: http://0.0.0.0:45246/getimages
-      expected_status: 200
-      get_token: http://0.0.0.0:45246/retrieve_token
-    - url: http://0.0.0.0:45246/getphotos
-      expected_status: 200
-      search_for: "photos"
-      get_token: http://0.0.0.0:45246/retrieve_token
-    - url: http://0.0.0.0:45246/try
+  - url: https://hng.tech
+    status_check: https://hng.tech/status                # Use this to test internal services
+    expected_status: 200
+    check_interval: 30s
+    get_token_url: https://hng.tech/retrieve_token
+  - url: https://google.com
+    expected_status: 200
+    search_for: "photos"
+    check_interval: 30s
+    get_token_url: http://0.0.0.0:45246/retrieve_token
+  - url: https://hng.agency
 
 nginx:
   log_filename: /var/www/nginx.log
@@ -74,15 +70,38 @@ ram:
   alert_level: 70%
   alert_interval: daily
 
+process-monitor:
+  alert_interval: 1min
+  processes:
+    - docker
+
+backups-monitor:
+  backup-folder: /var/db/backups
+  backup-minimum-file-size: 30M
+  remote-backup-format: s3
+  remote-backup-location: s2
+  check-backups: daily
+  check-backups-time: 12am
+
+heavy-load-watcher:
+  minimum-time: 1m
+  watch-cpu: yes
+  watch-ram: yes
+  watch-network: yes
+
+
 alerts:
+  handler: https://lorona.io/mailer
   emails:
-    - mark@hotels.ng
-    - ikay@hotels.ng
+    - mark@hng.tech
+    - ikay@hng.tech
 
   slack:
     token: YC4YN8LRJ8RkEL
     key: YC4YN8LRJ8RkEL
     url: https://api.slack.com/notify
 
+
+# Is process observation needed?
 
 ...

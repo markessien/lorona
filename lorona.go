@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"log"
+	"strconv"
 	"time"
 )
 
@@ -17,15 +18,22 @@ func main() {
 	fmt.Println("Lorona for package: " + settings.ContainerName)
 
 	startup(settings)
-	time.Sleep(16 * time.Second)
-	shutdown()
 }
 
 func startup(settings *Settings) {
-	StartEndpointMonitoring(settings)
-}
 
-// Request all threads to shutdown
-func shutdown() {
+	uptimes := make(chan UptimeResponse)
+
+	StartEndpointMonitoring(settings, uptimes)
+
+	for {
+
+		uptime := <-uptimes
+
+		fmt.Println("Received uptime info: " + uptime.Endpoint + " - Code:" + strconv.Itoa(uptime.ResponseCode))
+		time.Sleep(5 * time.Second)
+
+	}
+
 	StopEndpointMonitoring()
 }
