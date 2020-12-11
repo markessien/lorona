@@ -11,15 +11,15 @@ type Results struct {
 	ContainerSupport     string
 	ContainerDescription string
 
-	Uptime   []UptimeResponse
-	Loglines []LogLine
+	UptimeList []UptimeResponse
+	Loglines   []LogLine
 }
 
 func toString() {
 
 	b := UptimeResponse{}
 	m := Results{}
-	m.Uptime = []UptimeResponse{b}
+	m.UptimeList = []UptimeResponse{b}
 
 	s, _ := json.Marshal(m)
 

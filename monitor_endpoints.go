@@ -15,7 +15,6 @@ type UptimeResponse struct {
 
 var stopEndpointMonitoring bool
 
-// This is called to start the endpoint monitoring. The results
 func StartEndpointMonitoring(settings *Settings, uptimes chan UptimeResponse) {
 
 	stopEndpointMonitoring = false
