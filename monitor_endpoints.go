@@ -1,7 +1,6 @@
 package main
 
 import (
-	"log"
 	"net/http"
 	"time"
 )
@@ -27,7 +26,6 @@ func StartEndpointMonitoring(settings *Settings, uptimes chan UptimeResponse) {
 			duration, err := time.ParseDuration(uptimeRequest.CheckInterval)
 			if err != nil {
 				print("Could not monitor endpoint: " + uptimeRequest.Endpoint + " - Check duration")
-				log.Fatal(err)
 			} else {
 				go monitorEndpoint(uptimeRequest.Endpoint, duration, uptimes)
 			}
@@ -54,6 +52,7 @@ func monitorEndpoint(endpointUrl string, interval time.Duration, uptimes chan Up
 		if err != nil {
 			uptime.ResponseCode = 598
 			uptime.ResponseTime = 0
+			uptime.ResponseValue = err.Error()
 		} else {
 			uptime.ResponseCode = response.StatusCode
 			uptime.ResponseTime = elapsed

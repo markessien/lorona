@@ -3,7 +3,6 @@ package main
 import (
 	"fmt"
 	"log"
-	"strconv"
 	"time"
 )
 
@@ -22,16 +21,28 @@ func main() {
 
 func startup(settings *Settings) {
 
-	uptimes := make(chan UptimeResponse)
+	// Create a channel queue that is as large as the number of threads we have.
+	uptimes := make(chan UptimeResponse, len(settings.UptimeRequestList))
 
 	StartEndpointMonitoring(settings, uptimes)
 
 	for {
 
-		uptime := <-uptimes
+		select {
+		case uptime := <-uptimes:
 
-		fmt.Println("Received uptime info: " + uptime.Endpoint + " - Code:" + strconv.Itoa(uptime.ResponseCode))
-		time.Sleep(5 * time.Second)
+			fmt.Printf("Received uptime info for %s. Result Code: %d. RTT=%s. ", uptime.Endpoint, uptime.ResponseCode, uptime.ResponseTime)
+			if uptime.ResponseCode == 598 {
+				fmt.Printf(uptime.ResponseValue)
+			}
+			fmt.Println()
+
+		default:
+
+			fmt.Println("no activity")
+			time.Sleep(5 * time.Second)
+
+		}
 
 	}
 
