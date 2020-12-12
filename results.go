@@ -10,9 +10,9 @@ type Results struct {
 	ContainerName        string
 	ContainerSupport     string
 	ContainerDescription string
-
-	UptimeList []UptimeResponse
-	Loglines   []LogLine
+	FileFormat           string
+	UptimeList           []UptimeResponse
+	Loglines             []LogLine
 }
 
 func toString() {

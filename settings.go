@@ -22,7 +22,7 @@ type Settings struct {
 	ContainerDescription string `yaml:"container_description"`
 
 	Nginx struct {
-		Logfilename string `yaml:"log_filename"`
+		ErrorLogfilename string `yaml:"error_log_filename"`
 	} `yaml:"nginx"`
 
 	UptimeRequestList []UptimeRequest `yaml:"uptime"`
@@ -61,5 +61,5 @@ func LoadSettings(settingsFile string) (*Settings, error) {
 }
 
 func print(str string) {
-	fmt.Printf(str)
+	fmt.Println(str)
 }

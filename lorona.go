@@ -17,34 +17,44 @@ func main() {
 
 	fmt.Println("Lorona for package: " + settings.ContainerName)
 
-	startup(settings)
+	process(settings)
 }
 
-func startup(settings *Settings) {
+func process(settings *Settings) {
 
 	// Create a channel queue that is as large as the number of threads we have.
 	uptimes := make(chan UptimeResponse, len(settings.UptimeRequestList))
+	loglines := make(chan LogLine, 100)
 
-	StartEndpointMonitoring(settings, uptimes)
-
+	// Reset the results structure and set the base things from the settings
 	var results Results
 	ResetResult(settings, &results)
 
+	// Start all the monitoring services
+	// StartEndpointMonitoring(settings, uptimes)
+	StartLogMonitoring(settings, loglines)
+
+	// Watch for messages from the channels and add them to the results structure
+	// We need to handle the case that logs are filled faster than this function
+	// clears the results. Use extra timer / channel for this
 	for {
 
 		select {
+		case logline := <-loglines:
+			// Add logline to the result. The logline contains enough info for it to later
+			// know which particular log it came from
+			results.Loglines = append(results.Loglines, logline)
 		case uptime := <-uptimes:
 
 			// Add this new uptime result to the list
 			results.UptimeList = append(results.UptimeList, uptime)
+
+		case <-time.After(time.Second * 5): // does this do what we think it does? Check.
 		default:
 
 			s, _ := json.Marshal(results)
 			fmt.Println(string(s))
 			time.Sleep(5 * time.Second)
-			fmt.Println()
-			fmt.Println()
-			fmt.Println()
 
 			ResetResult(settings, &results)
 		}
@@ -55,6 +65,7 @@ func startup(settings *Settings) {
 }
 
 func ResetResult(settings *Settings, results *Results) {
+	results.FileFormat = "LoronaV1"
 	results.ContainerName = settings.ContainerName
 	results.ContainerSupport = settings.ContainerSupport
 	results.ContainerDescription = settings.ContainerDescription

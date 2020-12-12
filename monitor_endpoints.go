@@ -5,6 +5,8 @@ import (
 	"time"
 )
 
+// The UptimeResponse structure is used to record the results
+// from a single uptime query
 type UptimeResponse struct {
 	Endpoint      string
 	ResponseValue string
@@ -13,8 +15,10 @@ type UptimeResponse struct {
 	PageTitle     string
 }
 
+// Used to stop the monitoring threads neatly
 var stopEndpointMonitoring bool
 
+// Kick off all the uptime monitoring threads
 func StartEndpointMonitoring(settings *Settings, uptimes chan UptimeResponse) {
 
 	stopEndpointMonitoring = false
@@ -33,10 +37,12 @@ func StartEndpointMonitoring(settings *Settings, uptimes chan UptimeResponse) {
 	}
 }
 
+// Request all threads to stop
 func StopEndpointMonitoring() {
 	stopEndpointMonitoring = true
 }
 
+// A go-routine that regularly checks if an endpoint is up
 func monitorEndpoint(endpointUrl string, interval time.Duration, uptimes chan UptimeResponse) {
 
 	for {
