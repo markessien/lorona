@@ -32,48 +32,59 @@ uptime:
     get_token_url: http://0.0.0.0:45246/retrieve_token
   - url: https://hng.agency
 
-nginx:
-  error_log_filename: ./sample_logs/error.log
-  errors:
-    minimum_log_level: ERROR
-    alert_level: 1
+logs:
+  - name: nginx-error
+    filename: ./sample_logs/error.log
     alert_interval: hourly
-  404:
-    alert_level: 1
-    alert_interval: hourly
-  5xx:
-    alert_level: 1
-    alert_interval: 5mins
+    capture-line-if:
+      - errorlevel=warning
+      - condition: errorlevel=error
+        alert: immediately
 
-laravel:
-  log_filename: log/laravel.log
-  minimum_log_level: WARNING
+  - name: nginx-access
+    filename: ./sample_logs/access.log
+    capture-line-if:
+      - statuscode = 404
+      - condition: statuscode > 500 AND statuscode < 599
+        alert: immediately
+        repeat-alert: 5m
 
-mysql:
-  log_filename: /var/www/mysql.log
-  slow_query:
-    slow_query_log: /var/www/slow.log
-    alert_level: 10s
+  - name: laravel
+    filename: ./sample_logs/laravel.log
+    capture-line-if:
+      - errorlevel=warning
 
-drivespace:
-  alert_level: 50GB
-  alert_interval: daily
-  locations:
-    - /var/www
-    - /etc/nginx
+  -name: mysql-slow-query
+    log_filename: ./sample_logs/mysql-slow.log
+    capture-line-if:
+      - querytime > 10s
 
-cpu:
-  alert_level: 70%
-  alert_interval: daily
+system:
+  drivespace:
+    alert_level: 50GB
+    repeat-alert: daily
+    locations:
+      - /var/www
+      - /etc/nginx
 
-ram:
-  alert_level: 70%
-  alert_interval: daily
+  cpu:
+    alert_level: 70%
+    repeat-alert: daily
 
-process-monitor:
-  alert_interval: 1min
-  processes:
-    - docker
+  ram:
+    alert_level: 70%
+    repeat-alert: daily
+
+  process-monitor:
+    repeat-alert: 1min
+    processes:
+      - docker
+
+  heavy-load-watcher:
+    minimum-time: 1m
+    watch-cpu: yes
+    watch-ram: yes
+    watch-network: yes
 
 backups-monitor:
   backup-folder: /var/db/backups
@@ -82,13 +93,6 @@ backups-monitor:
   remote-backup-location: s2
   check-backups: daily
   check-backups-time: 12am
-
-heavy-load-watcher:
-  minimum-time: 1m
-  watch-cpu: yes
-  watch-ram: yes
-  watch-network: yes
-
 
 alerts:
   handler: https://lorona.io/mailer

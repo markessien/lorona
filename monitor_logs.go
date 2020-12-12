@@ -30,6 +30,12 @@ type LogFile struct {
 	Regex         string
 }
 
+// TODO:
+// Keep the log file looping
+// Open the log file from where I last stopped
+// Convert the timestamp format
+// Add support for access log
+
 // Used to stop the monitoring threads neatly
 var stopLogMonitoring bool
 var logFileRegex LogFileRegex

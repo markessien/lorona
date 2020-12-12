@@ -23,13 +23,19 @@ func StartEndpointMonitoring(settings *Settings, uptimes chan UptimeResponse) {
 
 	stopEndpointMonitoring = false
 
+	// Loop over all uptime requests
 	for _, uptimeRequest := range settings.UptimeRequestList {
 
+		// Check that there is a valid endpoint to check
 		if len(uptimeRequest.Endpoint) > 0 {
+
+			// Discover the check frequency
 			duration, err := time.ParseDuration(uptimeRequest.CheckInterval)
 			if err != nil {
 				print("Could not monitor endpoint: " + uptimeRequest.Endpoint + " - Check duration")
 			} else {
+
+				// Start the go-routine that will do the monitoring
 				go monitorEndpoint(uptimeRequest.Endpoint, duration, uptimes)
 			}
 		}
@@ -46,15 +52,17 @@ func StopEndpointMonitoring() {
 func monitorEndpoint(endpointUrl string, interval time.Duration, uptimes chan UptimeResponse) {
 
 	for {
+		// A single uptime object that will store this uptime check results
 		var uptime UptimeResponse
 		uptime.Endpoint = endpointUrl
 
-		// Call the endpoint
+		// Call the endpoint. Measure how long it takes
 		start := time.Now()
 		response, err := http.Head(uptime.Endpoint)
 		elapsed := time.Since(start)
 
 		if err != nil {
+			// We use code 598 for an error like 'host not found'
 			uptime.ResponseCode = 598
 			uptime.ResponseTime = 0
 			uptime.ResponseValue = err.Error()
@@ -67,7 +75,10 @@ func monitorEndpoint(endpointUrl string, interval time.Duration, uptimes chan Up
 			return
 		}
 
+		// push it into the channel. It will be picked up by the main thread
 		uptimes <- uptime
+
+		// Sleep for the time from the settings file before testing uptime again
 		time.Sleep(interval)
 	}
 }
