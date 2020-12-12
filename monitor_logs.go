@@ -2,7 +2,6 @@ package main
 
 import (
 	"bufio"
-	"fmt"
 	"os"
 	"regexp"
 )
@@ -23,25 +22,40 @@ type LogLine struct {
 }
 
 type LogFile struct {
-	filepath      string
+	AppName       string
+	LogType       string
+	Filepath      string
 	LastTimestamp string
 	LastByteRead  int64
+	Regex         string
 }
 
 // Used to stop the monitoring threads neatly
 var stopLogMonitoring bool
+var logFileRegex LogFileRegex
 
 //
 func StartLogMonitoring(settings *Settings, loglines chan LogLine) {
 
+	logFileRegex, err := LoadLogFileRegex()
+	if err != nil {
+		panic("Cannot load log file regex")
+	}
+
 	// Each log file is set differently and has a different format.
 	// We look at which is set and start it up separately
 	if len(settings.Nginx.ErrorLogfilename) > 0 {
-		// Error log format: YYYY/MM/DD HH:MM:SS [LEVEL] PID#TID: *CID MESSAGE
-		print("Monitoring Nginx logfile at " + settings.Nginx.ErrorLogfilename)
 
-		if _, err := os.Stat(settings.Nginx.ErrorLogfilename); err == nil {
-			go monitorLog(settings.Nginx.ErrorLogfilename, loglines)
+		var logFile LogFile
+		logFile.AppName = "NGINX"
+		logFile.LogType = "ErrorLog"
+		logFile.Filepath = settings.Nginx.ErrorLogfilename
+		logFile.Regex = logFileRegex.NginxErrorRegex
+
+		print("Monitoring Nginx Error logfile at " + logFile.Filepath)
+
+		if _, err := os.Stat(logFile.Filepath); err == nil {
+			go monitorLog(logFile, loglines)
 
 		} else if os.IsNotExist(err) {
 			print("Nginx logfile does not exist")
@@ -49,8 +63,8 @@ func StartLogMonitoring(settings *Settings, loglines chan LogLine) {
 	}
 }
 
-func monitorLog(filename string, loglines chan LogLine) {
-	f, err := os.Open(filename)
+func monitorLog(logFile LogFile, loglines chan LogLine) {
+	f, err := os.Open(logFile.Filepath)
 	if err != nil {
 		panic(err)
 	}
@@ -62,9 +76,10 @@ func monitorLog(filename string, loglines chan LogLine) {
 	for scanner.Scan() {
 
 		var logline LogLine
-		logline.LogPath = filename
+		logline.LogPath = logFile.Filepath
+		logline.AppName = logFile.AppName
 
-		var expression = regexp.MustCompile(`(?P<dateandtime>[(\d\/ \:]+) \[(?P<errorlevel>[a-z]+)\] (\d+)\#(\d+): \*?(\d+)? ?(?P<description>.*)`)
+		var expression = regexp.MustCompile(logFile.Regex)
 		match := expression.FindStringSubmatch(scanner.Text())
 
 		for i, name := range expression.SubexpNames() {
@@ -77,7 +92,7 @@ func monitorLog(filename string, loglines chan LogLine) {
 			}
 		}
 
-		fmt.Printf("Time: %s Error Level: %s Description: %s\n", logline.TimeStamp, logline.ErrorLevel, logline.Description)
+		loglines <- logline
 	}
 
 }

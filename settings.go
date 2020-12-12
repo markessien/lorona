@@ -28,6 +28,11 @@ type Settings struct {
 	UptimeRequestList []UptimeRequest `yaml:"uptime"`
 }
 
+type LogFileRegex struct {
+	NginxErrorRegex  string `yaml:"nginx_error_log"`
+	NginxAccessRegex string `yaml:"nginx_access_log"`
+}
+
 func LoadSettings(settingsFile string) (*Settings, error) {
 
 	settings := &Settings{}
@@ -58,6 +63,28 @@ func LoadSettings(settingsFile string) (*Settings, error) {
 	}
 
 	return settings, nil
+}
+
+func LoadLogFileRegex() (*LogFileRegex, error) {
+
+	logRegex := &LogFileRegex{}
+
+	// Open config file
+	file, err := os.Open("./log_formats.yaml")
+	if err != nil {
+		return nil, err
+	}
+	defer file.Close()
+
+	// Init new YAML decode
+	d := yaml.NewDecoder(file)
+
+	// Start YAML decoding from file
+	if err := d.Decode(&logRegex); err != nil {
+		return nil, err
+	}
+
+	return logRegex, nil
 }
 
 func print(str string) {

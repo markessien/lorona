@@ -43,6 +43,7 @@ func process(settings *Settings) {
 		case logline := <-loglines:
 			// Add logline to the result. The logline contains enough info for it to later
 			// know which particular log it came from
+			fmt.Printf("Time: %s Error Level: %s Description: %s\n", logline.TimeStamp, logline.ErrorLevel, logline.Description[0:20])
 			results.Loglines = append(results.Loglines, logline)
 		case uptime := <-uptimes:
 
