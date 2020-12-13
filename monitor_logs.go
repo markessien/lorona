@@ -16,7 +16,7 @@ type LogLine struct {
 	TimeStamp    string
 	SourceIP     string
 	Request      string
-	Code         string
+	StatusCode   string
 	UserAgent    string
 	ResponseSize int64
 	Referrer     string
@@ -39,7 +39,6 @@ type LogFile struct {
 // Keep the log file looping
 // Open the log file from where I last stopped
 // Convert the timestamp format
-// Add support for access log
 // Notes:
 // https://github.com/Knetic/govaluate
 // https://github.com/oleksandr/conditions
@@ -104,10 +103,6 @@ func monitorLog(logFile LogFile, loglines chan LogLine) {
 		// Find the matching text in the log
 		match := expression.FindStringSubmatch(scanner.Text())
 
-		print("0" + scanner.Text())
-		print("1: " + strconv.Itoa(len(match)))
-		print("2: " + strconv.Itoa(len(expression.SubexpNames())))
-
 		// Get each value
 		for i, name := range expression.SubexpNames() {
 			if name == "errorlevel" {
@@ -116,6 +111,16 @@ func monitorLog(logFile LogFile, loglines chan LogLine) {
 				logline.Description = match[i]
 			} else if name == "timestamp" {
 				logline.TimeStamp = match[i]
+			} else if name == "ipaddress" {
+				logline.SourceIP = match[i]
+			} else if name == "statuscode" {
+				logline.StatusCode = match[i]
+			} else if name == "useragent" {
+				logline.UserAgent = match[i]
+			} else if name == "referrer" {
+				logline.Referrer = match[i]
+			} else if name == "bytessent" {
+				logline.ResponseSize, _ = strconv.ParseInt(match[i], 10, 64) // convert to a 64bit int in base 10
 			}
 		}
 
