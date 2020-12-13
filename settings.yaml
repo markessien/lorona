@@ -1,15 +1,9 @@
 ---
 # Configuration file for Lorona - a very simple container monitoring solution
 
-<<<<<<< HEAD
 container-name: user_auth
 container-support: mark@hng.tech
 container-description: "For user authentication"
-=======
-container_name: user_auth
-container_support: mark@hng.tech
-container_description: 'For user authentication'
->>>>>>> 983052cbc931336931dfa5c546f05967b9657784
 
 # This is an automatically created page that will aggregate all your containers together. You can easily
 # view errors, logs, downtime, server ability, etc
@@ -55,7 +49,7 @@ logs:
 
   - name: nginx-access
     filepath: ./sample_logs/access.log
-    type: nginx-access-log2
+    type: nginx-access-log
     capture-line-if:
       - statuscode = 404
       - statuscode > 500 AND statuscode < 599 THEN alert immediately

@@ -69,6 +69,7 @@ func StartLogMonitoring(settings *Settings, loglines chan LogLine) {
 			continue
 		}
 
+		// Start the go-routine that will be monitoring the logs
 		go monitorLog(logFile, loglines)
 	}
 }
