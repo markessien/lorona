@@ -74,6 +74,10 @@ func StartLogMonitoring(settings *Settings, loglines chan LogLine) {
 	}
 }
 
+func StopReadingLogs() {
+	stopLogMonitoring = true
+}
+
 func monitorLog(logFile LogFile, loglines chan LogLine) {
 
 	// Open the log file
@@ -129,6 +133,20 @@ func monitorLog(logFile LogFile, loglines chan LogLine) {
 
 }
 
-func StopReadingLogs() {
-	stopLogMonitoring = true
+func findLastReadSpot() {
+	// Complicated technique. This is the way:
+	// We use the timestamp to mark our position. That means for
+	// each log file, we store some info locally on last read
+	// time stamp. If there is no info stored, we only read up to 24 hours prior
+
+	// We also store the byte offset where we last read from. This is just a hint
+	// as the file may be deleted or rotated.
+
+	// Step 1: Get last open byte offset.
+	// Step 2: Retrieve our last gotten timestamp for this log file
+	// Step 3: Open file at last byte offset. Walk backwards till we find our timestamp. Start reading from there. Stop at 24 hours earlier at most
+	// ALGA: If we nothing stored, we start from end and walk backwards till we find a log entry older than 24 hours ago. We start there.
+	// If last byte read is larger than file, we cancel it and use ALGA
+	//
+
 }
