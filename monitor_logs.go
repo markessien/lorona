@@ -89,6 +89,18 @@ func monitorLog(logFile LogFile, loglines chan LogLine) {
 
 	// Open with scanner so we can check each line
 	scanner := bufio.NewScanner(f)
+
+	/*
+			// We can use the below to jump to where we want
+			pos := start
+		    scanLines := func(data []byte, atEOF bool) (advance int, token []byte, err error) {
+		        advance, token, err = bufio.ScanLines(data, atEOF)
+		        pos += int64(advance)
+		        return
+			}
+			scanner.Split(scanLines)
+	*/
+
 	scanner.Split(bufio.ScanLines)
 
 	// Retrieve the regular expression we will use to parse the line
