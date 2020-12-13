@@ -102,12 +102,8 @@ func monitorLog(logFile LogFile, loglines chan LogLine) {
 		// Find the matching text in the log
 		match := expression.FindStringSubmatch(scanner.Text())
 
-		for _, val := range match {
-			print(val)
-		}
-
+		// Get each value
 		for i, name := range expression.SubexpNames() {
-			print(name)
 			if name == "errorlevel" {
 				logline.ErrorLevel = match[i]
 			} else if name == "description" {

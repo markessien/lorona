@@ -102,8 +102,8 @@ func LoadLogFileRegex() (error, map[string]string) {
 			var items = strings.SplitN(regex_line, ":", 2)
 			if len(items) == 2 {
 
-				// Save in the key-value, remove leading spaces
-				regexes[strings.TrimSpace(items[0])] = strings.TrimSpace(items[1])
+				// Save in the key-value, remove leading spaces and quotes
+				regexes[strings.TrimSpace(items[0])] = strings.Trim(strings.TrimSpace(items[1]), "\"'")
 			}
 
 		}
