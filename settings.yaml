@@ -2,16 +2,19 @@
 ---
 # Configuration file for Lorona - a very simple container monitoring solution
 
-container_name: user_auth
-container_support: mark@hng.tech
-container_description: "For user authentication"
+container-name: user_auth
+container-support: mark@hng.tech
+container-description: "For user authentication"
 
+# This is an automatically created page that will aggregate all your containers together. You can easily
+# view errors, logs, downtime, server ability, etc
 push_metrics:
   lorona:
     your_unique_page: https://lorona.io/alexspecial # you can select any free page. It will automatically be created
-    your_password: jcfRxQ7WXMFnES6TUizphW5DzhaTqNTiyckc2DgrdxYeHowo3PdLjeez3NFinydn # minimum 64 characters
-    publish_interval: 1m
+    your-password: jcfRxQ7WXMFnES6TUizphW5DzhaTqNTiyckc2DgrdxYeHowo3PdLjeez3NFinydn # minimum 64 characters
+    publish-interval: 1m
 
+# If you need to graph the info collected here, it can be exposed in prometheus or json format
 expose_metrics:
   prometheus_format:
     url: 0.0.0.0:5000
@@ -19,43 +22,43 @@ expose_metrics:
   json_format:
     url: 0.0.0.0:5001
 
+# Monitor your endpoints. You can monitor from inside the micro-services or outside
 uptime:
   - url: https://hng.tech
-    status_check: https://hng.tech/status                # Use this to test internal services
-    expected_status: 200
-    check_interval: 30s
-    get_token_url: https://hng.tech/retrieve_token
+    status-check: https://hng.tech/status                # Use this to test internal services
+    expected-status: 200
+    check-interval: 30s
+    get-token_url: https://hng.tech/retrieve_token
   - url: https://google.com
-    expected_status: 200
-    search_for: "photos"
-    check_interval: 30s
-    get_token_url: http://0.0.0.0:45246/retrieve_token
+    expected-status: 200
+    search-for: "photos"
+    check-interval: 30s
+    get-token-url: http://0.0.0.0:45246/retrieve_token
   - url: https://hng.agency
 
+# Pull in the logs of your app, your web server and push them live. Set alerts for anytime something
+# strange is seen in the logs.
 logs:
   - name: nginx-error
-    filename: ./sample_logs/error.log
-    alert_interval: hourly
+    filepath: ./sample_logs/error.log
+    alert-interval: daily
     capture-line-if:
-      - errorlevel=warning
-      - condition: errorlevel=error
-        alert: immediately
+      - errorlevel = warning
+      - errorlevel = error THEN alert immediately
 
   - name: nginx-access
-    filename: ./sample_logs/access.log
+    filepath: ./sample_logs/access.log
     capture-line-if:
       - statuscode = 404
-      - condition: statuscode > 500 AND statuscode < 599
-        alert: immediately
-        repeat-alert: 5m
+      - statuscode > 500 AND statuscode < 599 THEN alert immediately
 
   - name: laravel
-    filename: ./sample_logs/laravel.log
+    filepath: ./sample_logs/laravel.log
     capture-line-if:
-      - errorlevel=warning
+      - errorlevel = warning
 
-  -name: mysql-slow-query
-    log_filename: ./sample_logs/mysql-slow.log
+  - name: mysql-slow-query
+    filepath: ./sample_logs/mysql-slow.log
     capture-line-if:
       - querytime > 10s
 
@@ -95,10 +98,10 @@ backups-monitor:
   check-backups-time: 12am
 
 alerts:
-  handler: https://lorona.io/mailer
+  handler: https://mail.lorona.io/
   emails:
     - mark@hng.tech
-    - ikay@hng.tech
+    - simon@hng.tech
 
   slack:
     token: YC4YN8LRJ8RkEL

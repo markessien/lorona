@@ -5,6 +5,14 @@ import (
 	"time"
 )
 
+type UptimeRequest struct {
+	Endpoint       string `yaml:"url"`
+	StatusCheck    string `yaml:"status-check"`
+	ExpectedStatus string `yaml:"expected-status"`
+	CheckInterval  string `yaml:"check-interval"`
+	GetTokenUrl    string `yaml:"get-token_url"`
+}
+
 // The UptimeResponse structure is used to record the results
 // from a single uptime query
 type UptimeResponse struct {

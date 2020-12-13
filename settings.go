@@ -7,30 +7,15 @@ import (
 	"gopkg.in/yaml.v2"
 )
 
-type UptimeRequest struct {
-	Endpoint       string `yaml:"url"`
-	StatusCheck    string `yaml:"status_check"`
-	ExpectedStatus string `yaml:"expected_status"`
-	CheckInterval  string `yaml:"check_interval"`
-	GetTokenUrl    string `yaml:"get_token_url"`
-}
-
 // Config struct for webapp config
 type Settings struct {
-	ContainerName        string `yaml:"container_name"`
-	ContainerSupport     string `yaml:"container_support"`
-	ContainerDescription string `yaml:"container_description"`
+	ContainerName        string `yaml:"container-name"`
+	ContainerSupport     string `yaml:"container-support"`
+	ContainerDescription string `yaml:"container-description"`
 
-	Nginx struct {
-		ErrorLogfilename string `yaml:"error_log_filename"`
-	} `yaml:"nginx"`
+	LogFiles []LogFile `yaml:"logs"`
 
 	UptimeRequestList []UptimeRequest `yaml:"uptime"`
-}
-
-type LogFileRegex struct {
-	NginxErrorRegex  string `yaml:"nginx_error_log"`
-	NginxAccessRegex string `yaml:"nginx_access_log"`
 }
 
 func LoadSettings(settingsFile string) (*Settings, error) {
@@ -52,7 +37,7 @@ func LoadSettings(settingsFile string) (*Settings, error) {
 		return nil, err
 	}
 
-	// Set sensible defaults
+	// Set sensible defaults for uptime list
 	for i := 0; i < len(settings.UptimeRequestList); i++ {
 
 		if len(settings.UptimeRequestList[i].CheckInterval) <= 0 {
@@ -60,6 +45,24 @@ func LoadSettings(settingsFile string) (*Settings, error) {
 		}
 
 		fmt.Printf("Request to monitor endpoint: " + settings.UptimeRequestList[i].Endpoint + " @ " + settings.UptimeRequestList[i].CheckInterval + "\n")
+	}
+
+	// Set sensible defaults for logs
+	for i := 0; i < len(settings.LogFiles); i++ {
+
+		// If no alert interval is set, set it to 15 minutes. This is
+		// the default alert interval, which can be changed on a per-item
+		// basis in the CaptureConditions.
+		if len(settings.LogFiles[i].AlertInterval) <= 0 {
+			settings.LogFiles[i].AlertInterval = "15m" // 15 minutes
+		}
+
+		_, err := os.Stat(settings.LogFiles[i].Filepath)
+		if os.IsNotExist(err) {
+			print("WARNING: File " + settings.LogFiles[i].Filepath + " does not exist!")
+		}
+
+		fmt.Printf("Request to monitor logfile: " + settings.LogFiles[i].Filepath + " @ " + settings.LogFiles[i].AlertInterval + "\n")
 	}
 
 	return settings, nil

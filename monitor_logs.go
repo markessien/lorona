@@ -22,12 +22,19 @@ type LogLine struct {
 }
 
 type LogFile struct {
-	AppName       string
-	LogType       string
-	Filepath      string
-	LastTimestamp string
-	LastByteRead  int64
-	Regex         string
+	AppName           string   `yaml:"name"`
+	Filepath          string   `yaml:"filepath"`
+	AlertInterval     string   `yaml:"alert-interval"`
+	CaptureConditions []string `yaml:"capture-line-if"`
+	LogType           string
+	LastTimestamp     string
+	LastByteRead      int64
+	Regex             string
+}
+
+type LogFileRegex struct {
+	NginxErrorRegex  string `yaml:"nginx_error_log"`
+	NginxAccessRegex string `yaml:"nginx_access_log"`
 }
 
 // TODO:
@@ -35,6 +42,9 @@ type LogFile struct {
 // Open the log file from where I last stopped
 // Convert the timestamp format
 // Add support for access log
+// Notes:
+// https://github.com/Knetic/govaluate
+// https://github.com/oleksandr/conditions
 
 // Used to stop the monitoring threads neatly
 var stopLogMonitoring bool
@@ -43,30 +53,32 @@ var logFileRegex LogFileRegex
 //
 func StartLogMonitoring(settings *Settings, loglines chan LogLine) {
 
-	logFileRegex, err := LoadLogFileRegex()
-	if err != nil {
-		panic("Cannot load log file regex")
-	}
-
-	// Each log file is set differently and has a different format.
-	// We look at which is set and start it up separately
-	if len(settings.Nginx.ErrorLogfilename) > 0 {
-
-		var logFile LogFile
-		logFile.AppName = "NGINX"
-		logFile.LogType = "ErrorLog"
-		logFile.Filepath = settings.Nginx.ErrorLogfilename
-		logFile.Regex = logFileRegex.NginxErrorRegex
-
-		print("Monitoring Nginx Error logfile at " + logFile.Filepath)
-
-		if _, err := os.Stat(logFile.Filepath); err == nil {
-			go monitorLog(logFile, loglines)
-
-		} else if os.IsNotExist(err) {
-			print("Nginx logfile does not exist")
+	/*
+		logFileRegex, err := LoadLogFileRegex()
+		if err != nil {
+			panic("Cannot load log file regex")
 		}
-	}
+
+		// Each log file is set differently and has a different format.
+		// We look at which is set and start it up separately
+		if len(settings.Nginx.ErrorLogfilename) > 0 {
+
+			var logFile LogFile
+			logFile.AppName = "NGINX"
+			logFile.LogType = "ErrorLog"
+			logFile.Filepath = settings.Nginx.ErrorLogfilename
+			logFile.Regex = logFileRegex.NginxErrorRegex
+
+			print("Monitoring Nginx Error logfile at " + logFile.Filepath)
+
+			if _, err := os.Stat(logFile.Filepath); err == nil {
+				go monitorLog(logFile, loglines)
+
+			} else if os.IsNotExist(err) {
+				print("Nginx logfile does not exist")
+			}
+		}
+	*/
 }
 
 func monitorLog(logFile LogFile, loglines chan LogLine) {
