@@ -39,15 +39,17 @@ uptime:
 # Pull in the logs of your app, your web server and push them live. Set alerts for anytime something
 # strange is seen in the logs.
 logs:
-  - name: nginx-error
+  - name: "NGINX Error"
     filepath: ./sample_logs/error.log
     alert-interval: daily
+    type: nginx-error-log  # This has to correspond to a name in the log_formats file
     capture-line-if:
       - errorlevel = warning
       - errorlevel = error THEN alert immediately
 
   - name: nginx-access
     filepath: ./sample_logs/access.log
+    type: nginx-access-log2
     capture-line-if:
       - statuscode = 404
       - statuscode > 500 AND statuscode < 599 THEN alert immediately

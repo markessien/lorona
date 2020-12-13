@@ -1,8 +1,10 @@
 package main
 
 import (
+	"bufio"
 	"fmt"
 	"os"
+	"strings"
 
 	"gopkg.in/yaml.v2"
 )
@@ -68,26 +70,46 @@ func LoadSettings(settingsFile string) (*Settings, error) {
 	return settings, nil
 }
 
-func LoadLogFileRegex() (*LogFileRegex, error) {
+// This function loads the log_formats.yaml file and stores all
+// the regex parsers for each log file format in a key value.
+// Any new type added to the file will be inserted in there.
+func LoadLogFileRegex() (error, map[string]string) {
 
-	logRegex := &LogFileRegex{}
-
-	// Open config file
+	// Open file with all the regexes
 	file, err := os.Open("./log_formats.yaml")
 	if err != nil {
-		return nil, err
+		return err, nil
 	}
 	defer file.Close()
 
-	// Init new YAML decode
-	d := yaml.NewDecoder(file)
+	// read the file using the scanner
+	scanner := bufio.NewScanner(file)
+	scanner.Split(bufio.ScanLines)
 
-	// Start YAML decoding from file
-	if err := d.Decode(&logRegex); err != nil {
-		return nil, err
+	// The regexes will be stored here as key:value
+	var regexes = make(map[string]string)
+
+	// loop through each line
+	for scanner.Scan() {
+
+		// Get this single regex line
+		var regex_line = scanner.Text()
+
+		// Make sure it's not a comment and it is valid
+		if len(regex_line) > 3 && !strings.HasPrefix(regex_line, "#") && strings.Index(regex_line, ":") > 1 {
+
+			// Split, using the : as the delimeter. SplitN forces split to just 2 groups
+			var items = strings.SplitN(regex_line, ":", 2)
+			if len(items) == 2 {
+
+				// Save in the key-value, remove leading spaces
+				regexes[strings.TrimSpace(items[0])] = strings.TrimSpace(items[1])
+			}
+
+		}
 	}
 
-	return logRegex, nil
+	return nil, regexes
 }
 
 func print(str string) {
