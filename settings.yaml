@@ -1,10 +1,9 @@
-
 ---
 # Configuration file for Lorona - a very simple container monitoring solution
 
 container_name: user_auth
 container_support: mark@hng.tech
-container_description: "For user authentication"
+container_description: 'For user authentication'
 
 push_metrics:
   lorona:
@@ -21,13 +20,13 @@ expose_metrics:
 
 uptime:
   - url: https://hng.tech
-    status_check: https://hng.tech/status                # Use this to test internal services
+    status_check: https://hng.tech/status # Use this to test internal services
     expected_status: 200
     check_interval: 30s
     get_token_url: https://hng.tech/retrieve_token
   - url: https://google.com
     expected_status: 200
-    search_for: "photos"
+    search_for: 'photos'
     check_interval: 30s
     get_token_url: http://0.0.0.0:45246/retrieve_token
   - url: https://hng.agency
@@ -54,7 +53,7 @@ logs:
     capture-line-if:
       - errorlevel=warning
 
-  -name: mysql-slow-query
+  - name: mysql-slow-query
     log_filename: ./sample_logs/mysql-slow.log
     capture-line-if:
       - querytime > 10s
@@ -104,8 +103,4 @@ alerts:
     token: YC4YN8LRJ8RkEL
     key: YC4YN8LRJ8RkEL
     url: https://api.slack.com/notify
-
-
 # Is process observation needed?
-
-...
