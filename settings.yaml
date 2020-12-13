@@ -1,10 +1,15 @@
-
 ---
 # Configuration file for Lorona - a very simple container monitoring solution
 
+<<<<<<< HEAD
 container-name: user_auth
 container-support: mark@hng.tech
 container-description: "For user authentication"
+=======
+container_name: user_auth
+container_support: mark@hng.tech
+container_description: 'For user authentication'
+>>>>>>> 983052cbc931336931dfa5c546f05967b9657784
 
 # This is an automatically created page that will aggregate all your containers together. You can easily
 # view errors, logs, downtime, server ability, etc
@@ -31,9 +36,10 @@ uptime:
     get-token_url: https://hng.tech/retrieve_token
   - url: https://google.com
     expected-status: 200
-    search-for: "photos"
+    search-for: photos
     check-interval: 30s
     get-token-url: http://0.0.0.0:45246/retrieve_token
+
   - url: https://hng.agency
 
 # Pull in the logs of your app, your web server and push them live. Set alerts for anytime something
@@ -109,8 +115,4 @@ alerts:
     token: YC4YN8LRJ8RkEL
     key: YC4YN8LRJ8RkEL
     url: https://api.slack.com/notify
-
-
 # Is process observation needed?
-
-...
