@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"os"
 	"regexp"
+	"strconv"
 )
 
 // A single line within a logfile
@@ -103,13 +104,17 @@ func monitorLog(logFile LogFile, loglines chan LogLine) {
 		// Find the matching text in the log
 		match := expression.FindStringSubmatch(scanner.Text())
 
+		print("0" + scanner.Text())
+		print("1: " + strconv.Itoa(len(match)))
+		print("2: " + strconv.Itoa(len(expression.SubexpNames())))
+
 		// Get each value
 		for i, name := range expression.SubexpNames() {
 			if name == "errorlevel" {
 				logline.ErrorLevel = match[i]
 			} else if name == "description" {
 				logline.Description = match[i]
-			} else if name == "dateandtime" {
+			} else if name == "timestamp" {
 				logline.TimeStamp = match[i]
 			}
 		}
