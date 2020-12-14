@@ -2,8 +2,6 @@ package main
 
 import (
 	"bufio"
-	"bytes"
-	"encoding/base64"
 	"encoding/gob"
 	"fmt"
 	"os"
@@ -28,7 +26,7 @@ type Settings struct {
 
 // Loads the last settings file. We need it for some stuff
 // like info about the log files
-func LoadData(settings Settings) error {
+func LoadData(settings *Settings) error {
 
 	dataFile, err := os.Open(settings.DataFile)
 	if err != nil {
@@ -46,6 +44,25 @@ func LoadData(settings Settings) error {
 		return err
 	}
 
+	// We transfer all the position info from the log files to the settings
+	// structure. This position info is used to make sure we read from a pos
+	// advanced in the file (efficiency)
+
+	// Yes, I know we can do this better, but monitored log files should
+	// be a small number, so a double loop should not matter.
+	for _, logFileData := range dataSettings.LogFiles {
+
+		for i := 0; i < len(settings.LogFiles); i++ {
+			l := settings.LogFiles[i].Filepath
+			if l == logFileData.Filepath {
+				settings.LogFiles[i].LastTimestamp = logFileData.LastTimestamp
+				settings.LogFiles[i].LastByteRead = logFileData.LastByteRead
+				settings.LogFiles[i].LogFirstFewLines = logFileData.LogFirstFewLines
+				break
+			}
+		}
+	}
+
 	dataFile.Close()
 	return nil
 }
@@ -53,14 +70,14 @@ func LoadData(settings Settings) error {
 // Saves our settings structure. We update our settings
 // structure regularly with info like last read point in
 // files, so this persists it, in case tool is restarted
-func SaveData(settings Settings) {
+func SaveData(settings *Settings) error {
 
 	// create a file
 	dataFile, err := os.Create(settings.DataFile)
 
 	if err != nil {
 		fmt.Println(err)
-		os.Exit(1)
+		return err
 	}
 
 	// serialize the data
@@ -68,6 +85,8 @@ func SaveData(settings Settings) {
 	dataEncoder.Encode(&settings)
 
 	dataFile.Close()
+
+	return nil
 }
 
 // Load settings from the settings.yaml file
@@ -90,7 +109,7 @@ func LoadSettings(settingsFile string) (*Settings, error) {
 		return nil, err
 	}
 
-	LoadData(*settings)
+	LoadData(settings)
 
 	// Set sensible defaults for uptime list
 	for i := 0; i < len(settings.UptimeRequestList); i++ {
@@ -120,7 +139,7 @@ func LoadSettings(settingsFile string) (*Settings, error) {
 		fmt.Printf("Request to monitor logfile: " + settings.LogFiles[i].Filepath + " @ " + settings.LogFiles[i].AlertInterval + "\n")
 	}
 
-	SaveData(*settings)
+	SaveData(settings)
 
 	return settings, nil
 }
@@ -170,32 +189,4 @@ func LoadLogFileRegex() (error, map[string]string) {
 // Print ersatz
 func print(str string) {
 	fmt.Println(str)
-}
-
-// Go binary encoder for serialising structs
-func ToGOB64(m SX) string {
-	b := bytes.Buffer{}
-	e := gob.NewEncoder(&b)
-	err := e.Encode(m)
-	if err != nil {
-		fmt.Println(`failed gob Encode`, err)
-	}
-	return base64.StdEncoding.EncodeToString(b.Bytes())
-}
-
-// go binary decoder
-func FromGOB64(str string) SX {
-	m := SX{}
-	by, err := base64.StdEncoding.DecodeString(str)
-	if err != nil {
-		fmt.Println(`failed base64 Decode`, err)
-	}
-	b := bytes.Buffer{}
-	b.Write(by)
-	d := gob.NewDecoder(&b)
-	err = d.Decode(&m)
-	if err != nil {
-		fmt.Println(`failed gob Decode`, err)
-	}
-	return m
 }
