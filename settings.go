@@ -2,12 +2,17 @@ package main
 
 import (
 	"bufio"
+	"bytes"
+	"encoding/base64"
+	"encoding/gob"
 	"fmt"
 	"os"
 	"strings"
 
 	"gopkg.in/yaml.v2"
 )
+
+type SX map[string]interface{}
 
 // Config struct for webapp config
 type Settings struct {
@@ -20,9 +25,13 @@ type Settings struct {
 	UptimeRequestList []UptimeRequest `yaml:"uptime"`
 }
 
+// Load settings from the settings.yaml file
 func LoadSettings(settingsFile string) (*Settings, error) {
 
 	settings := &Settings{}
+
+	gob.Register(SX{})
+	gob.Register(LogFile{})
 
 	// Open config file
 	file, err := os.Open(settingsFile)
@@ -112,6 +121,35 @@ func LoadLogFileRegex() (error, map[string]string) {
 	return nil, regexes
 }
 
+// Print ersatz
 func print(str string) {
 	fmt.Println(str)
+}
+
+// Go binary encoder for serialising structs
+func ToGOB64(m SX) string {
+	b := bytes.Buffer{}
+	e := gob.NewEncoder(&b)
+	err := e.Encode(m)
+	if err != nil {
+		fmt.Println(`failed gob Encode`, err)
+	}
+	return base64.StdEncoding.EncodeToString(b.Bytes())
+}
+
+// go binary decoder
+func FromGOB64(str string) SX {
+	m := SX{}
+	by, err := base64.StdEncoding.DecodeString(str)
+	if err != nil {
+		fmt.Println(`failed base64 Decode`, err)
+	}
+	b := bytes.Buffer{}
+	b.Write(by)
+	d := gob.NewDecoder(&b)
+	err = d.Decode(&m)
+	if err != nil {
+		fmt.Println(`failed gob Decode`, err)
+	}
+	return m
 }

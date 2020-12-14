@@ -2,6 +2,7 @@ package main
 
 import (
 	"bufio"
+	"fmt"
 	"os"
 	"regexp"
 	"strconv"
@@ -78,6 +79,15 @@ func StopReadingLogs() {
 	stopLogMonitoring = true
 }
 
+func getFileLocalData() {
+
+}
+
+// Problems
+// - Very large files - solved
+// - Files rotated
+// - Files deleted
+// -
 func monitorLog(logFile LogFile, loglines chan LogLine) {
 
 	// Open the log file
@@ -87,20 +97,28 @@ func monitorLog(logFile LogFile, loglines chan LogLine) {
 	}
 	defer f.Close() // close at end of function
 
-	// Open with scanner so we can check each line
+	fi, err3 := f.Stat()
+	if err3 != nil {
+		panic(err3)
+	}
+
+	var lengthToRead = fi.Size() - logFile.LastByteRead
+	fmt.Printf("Unread portion of log is %d", lengthToRead)
+
+	// If the pending length of the log exceeds 1MB, we will skip over
+	// a big part of the log and start reading at the last 1MB
+	if lengthToRead > 1000000 {
+		logFile.LastByteRead = fi.Size() - 1000000
+	}
+
+	// Seek to the position last read
+	_, err2 := f.Seek(logFile.LastByteRead, 0)
+	if err2 != nil {
+		panic(err2)
+	}
+	// print(strconv.Itoa(new_offset))
+
 	scanner := bufio.NewScanner(f)
-
-	/*
-			// We can use the below to jump to where we want
-			pos := start
-		    scanLines := func(data []byte, atEOF bool) (advance int, token []byte, err error) {
-		        advance, token, err = bufio.ScanLines(data, atEOF)
-		        pos += int64(advance)
-		        return
-			}
-			scanner.Split(scanLines)
-	*/
-
 	scanner.Split(bufio.ScanLines)
 
 	// Retrieve the regular expression we will use to parse the line
@@ -118,6 +136,9 @@ func monitorLog(logFile LogFile, loglines chan LogLine) {
 
 		// Find the matching text in the log
 		match := expression.FindStringSubmatch(scanner.Text())
+		if len(match) == 0 {
+			continue
+		}
 
 		// Get each value
 		for i, name := range expression.SubexpNames() {
@@ -127,6 +148,9 @@ func monitorLog(logFile LogFile, loglines chan LogLine) {
 				logline.Description = match[i]
 			} else if name == "timestamp" {
 				logline.TimeStamp = match[i]
+
+				// We will need to check if this log has already been read (earlier than 'lastread')
+				// If so, we continue
 			} else if name == "ipaddress" {
 				logline.SourceIP = match[i]
 			} else if name == "statuscode" {
@@ -160,5 +184,82 @@ func findLastReadSpot() {
 	// ALGA: If we nothing stored, we start from end and walk backwards till we find a log entry older than 24 hours ago. We start there.
 	// If last byte read is larger than file, we cancel it and use ALGA
 	//
+
+	// ### The block below is to seek to the last opened position for this file
+	// Purpose of this is to avoid us loading 60GB log files into memory and crashing
+	// The system. The log parser is very conservative with memory usage and will always
+	// only scan from the end of the file
+
+	/*
+		last_10_log_lines = []
+
+		// Note that the log file may have been rotated
+		var last_pos = 0
+		o2, err := f.Seek(last_pos, 0)
+
+		var last_timestamp = ""
+
+		if len(last_timestamp) > 0 {
+			cur_pos = last_pos
+			eof_count = 0
+			// Walk backwards till we find the last known timestamp
+			for i := 0; i < 100; i++ {
+				// We are expecting the timestamp to be very close to the offset, but we limit our
+				// backwards search to 100 * 1000. The longest entry in our sample log is 644 chars,
+				// so we assume 1000 chars for a very long log entry
+				// So in total, we will be walking 100kb backwards. If we find 3 newlines, we will
+				// stop the search, as it means something is wrong
+
+				// Second Parameter is the point of reference for offset
+				// 0 = Beginning of file
+				// 1 = Current position
+				// 2 = End of file
+				// We jump back 1000 bytes and then search forward for either our timestamp or an EOF
+				o2, err := f.Seek(-1000, 1)
+				cur_pos = cur_pos - 1000
+
+				// Read 1000 bytes
+				b1 := make([]byte, 1000)
+				n1, err := f.Read(b1)
+
+				// Convert the bytes to a string
+				readline = string(b1[:n1])
+
+				// Check if the timestamp is in this block. If so, then
+				// seek to that timestamp position and exit
+				timestamp_pos = strings.Index(readline, last_timestamp)
+				if timestamp_pos > 0 {
+					o2, err := f.Seek(cur_pos+timestamp_pos, 0)
+					break
+				}
+
+				newline_pos = strings.Index(readline, "\n")
+				if newline_pos > 0 {
+					eof_count++
+					if eof_count > 20 break
+				}
+			}
+		}
+
+		// Open with scanner so we can check each line
+		// scanner := bufio.NewScanner(f)
+
+		// might make sense to only read 10MB from the end
+
+		/*
+				// We can use the below to jump to where we want
+				pos := start
+			    scanLines := func(data []byte, atEOF bool) (advance int, token []byte, err error) {
+			        advance, token, err = bufio.ScanLines(data, atEOF)
+			        pos += int64(advance)
+			        return
+				}
+				scanner.Split(scanLines)
+	*/
+
+	/*
+		b1 := make([]byte, 5)
+		n1, err := f.Read(b1)
+	*/
 
 }

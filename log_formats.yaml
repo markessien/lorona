@@ -1,6 +1,6 @@
 
+# This file stores all the regex needed to read various log formats
 # If you've customized the log formats, you can adapt them here.
-# Use named formats
 
 # Standard format is YYYY/MM/DD HH:MM:SS [LEVEL] PID#TID: *CID MESSAGE
 nginx-error-log: '(?P<timestamp>[(\d\/ \:]+) \[(?P<errorlevel>[a-z]+)\] (\d+)\#(\d+): \*?(\d+)? ?(?P<description>.*)'

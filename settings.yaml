@@ -48,7 +48,7 @@ logs:
       - errorlevel = error THEN alert immediately
 
   - name: nginx-access
-    filepath: ./sample_logs/access.log
+    filepath: ./private_logs/access_100m.log
     type: nginx-access-log
     capture-line-if:
       - statuscode = 404

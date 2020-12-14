@@ -17,8 +17,8 @@ func main() {
 
 	fmt.Println("Lorona for package: " + settings.ContainerName)
 
-	StartSystemMonitoring(settings)
-	// process(settings)
+	// StartSystemMonitoring(settings)
+	process(settings)
 }
 
 func process(settings *Settings) {
