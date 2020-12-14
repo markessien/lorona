@@ -6,22 +6,26 @@ import (
 	"os"
 	"regexp"
 	"strconv"
+	"time"
+
+	"github.com/araddon/dateparse"
 )
 
 // A single line within a logfile
 type LogLine struct {
-	AppName      string
-	LogPath      string
-	Description  string
-	ErrorLevel   string
-	TimeStamp    string
-	SourceIP     string
-	Request      string
-	StatusCode   string
-	UserAgent    string
-	ResponseSize int64
-	Referrer     string
-	Upstream     string
+	AppName         string
+	LogPath         string
+	Description     string
+	ErrorLevel      string
+	TimeStamp       string
+	ParsedtimeStamp time.Time
+	SourceIP        string
+	Request         string
+	StatusCode      string
+	UserAgent       string
+	ResponseSize    int64
+	Referrer        string
+	Upstream        string
 }
 
 // Represents a log file, e.g nginx.log
@@ -31,6 +35,7 @@ type LogFile struct {
 	AlertInterval     string   `yaml:"alert-interval"`
 	CaptureConditions []string `yaml:"capture-line-if"`
 	LogType           string   `yaml:"type"`
+	TimeFormat        string   // Loaded from log_formats.yaml file
 	Regex             string   // Loaded from log_formats.yaml file
 	LastTimestamp     string   // This is persisted in the lorona.dat file
 	LastByteRead      int64    // This is persisted in the lorona.dat file
@@ -167,6 +172,19 @@ func monitorLog(logFile LogFile, loglines chan LogLine) {
 				logline.Description = match[i]
 			} else if name == "timestamp" {
 				logline.TimeStamp = match[i]
+
+				if len(logFile.TimeFormat) > 0 {
+					t, err := time.Parse(logFile.TimeFormat, logline.TimeStamp)
+					if err == nil {
+						logline.ParsedtimeStamp = t
+					}
+				} else {
+					// We try a freestyle timestamp parsing
+					t, err := dateparse.ParseAny(logline.TimeStamp)
+					if err == nil {
+						logline.ParsedtimeStamp = t
+					}
+				}
 
 				// We will need to check if this log has already been read (earlier than 'lastread')
 				// If so, we continue

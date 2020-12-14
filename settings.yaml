@@ -51,6 +51,7 @@ logs:
   - name: nginx-access
     filepath: ./private_logs/access_100m.log
     type: nginx-access-log
+    time-format: apache-timestamp
     capture-line-if:
       - statuscode = 404
       - statuscode > 500 AND statuscode < 599 THEN alert immediately
