@@ -35,6 +35,7 @@ type LogFile struct {
 	AlertInterval     string   `yaml:"alert-interval"`
 	CaptureConditions []string `yaml:"capture-line-if"`
 	LogType           string   `yaml:"type"`
+	TimeFormatName    string   `yaml:"time-format"`
 	TimeFormat        string   // Loaded from log_formats.yaml file
 	Regex             string   // Loaded from log_formats.yaml file
 	LastTimestamp     string   // This is persisted in the lorona.dat file
@@ -68,6 +69,7 @@ func StartLogMonitoring(settings *Settings, loglines chan LogLine) {
 		// add a new format, just define it in log_formats and then
 		// specify the name of the newly defined one in 'type'
 		logFile.Regex = regexes[logFile.LogType]
+		logFile.TimeFormat = regexes[logFile.TimeFormatName]
 
 		// Make sure logtype is set. If it's not, no point parsing as we can't
 		// get the values anyways.

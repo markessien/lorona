@@ -44,6 +44,7 @@ logs:
     filepath: ./sample_logs/error.log
     alert-interval: daily
     type: nginx-error-log2  # This has to correspond to a name in the log_formats file
+    time-format: apache-timestamp
     capture-line-if:
       - errorlevel = warning
       - errorlevel = error THEN alert immediately
