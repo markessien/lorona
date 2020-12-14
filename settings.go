@@ -19,19 +19,61 @@ type Settings struct {
 	ContainerName        string `yaml:"container-name"`
 	ContainerSupport     string `yaml:"container-support"`
 	ContainerDescription string `yaml:"container-description"`
+	DataFile             string `yaml:"data-file"`
 
 	LogFiles []LogFile `yaml:"logs"`
 
 	UptimeRequestList []UptimeRequest `yaml:"uptime"`
 }
 
+// Loads the last settings file. We need it for some stuff
+// like info about the log files
+func LoadData(settings Settings) error {
+
+	dataFile, err := os.Open(settings.DataFile)
+	if err != nil {
+		fmt.Println(err)
+		return err
+	}
+
+	dataSettings := Settings{}
+
+	dataDecoder := gob.NewDecoder(dataFile)
+	err = dataDecoder.Decode(&dataSettings)
+
+	if err != nil {
+		fmt.Println(err)
+		return err
+	}
+
+	dataFile.Close()
+	return nil
+}
+
+// Saves our settings structure. We update our settings
+// structure regularly with info like last read point in
+// files, so this persists it, in case tool is restarted
+func SaveData(settings Settings) {
+
+	// create a file
+	dataFile, err := os.Create(settings.DataFile)
+
+	if err != nil {
+		fmt.Println(err)
+		os.Exit(1)
+	}
+
+	// serialize the data
+	dataEncoder := gob.NewEncoder(dataFile)
+	dataEncoder.Encode(&settings)
+
+	dataFile.Close()
+}
+
 // Load settings from the settings.yaml file
 func LoadSettings(settingsFile string) (*Settings, error) {
 
 	settings := &Settings{}
-
-	gob.Register(SX{})
-	gob.Register(LogFile{})
 
 	// Open config file
 	file, err := os.Open(settingsFile)
@@ -47,6 +89,8 @@ func LoadSettings(settingsFile string) (*Settings, error) {
 	if err := d.Decode(&settings); err != nil {
 		return nil, err
 	}
+
+	LoadData(*settings)
 
 	// Set sensible defaults for uptime list
 	for i := 0; i < len(settings.UptimeRequestList); i++ {
@@ -75,6 +119,8 @@ func LoadSettings(settingsFile string) (*Settings, error) {
 
 		fmt.Printf("Request to monitor logfile: " + settings.LogFiles[i].Filepath + " @ " + settings.LogFiles[i].AlertInterval + "\n")
 	}
+
+	SaveData(*settings)
 
 	return settings, nil
 }

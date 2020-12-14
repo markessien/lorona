@@ -4,6 +4,7 @@
 container-name: user_auth
 container-support: mark@hng.tech
 container-description: "For user authentication"
+data-file: "./lorona.dat"
 
 # This is an automatically created page that will aggregate all your containers together. You can easily
 # view errors, logs, downtime, server ability, etc
