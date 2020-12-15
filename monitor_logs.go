@@ -89,11 +89,9 @@ func StopReadingLogs() {
 	stopLogMonitoring = true
 }
 
-// Problems
-// - Very large files - solved
-// - Files rotated - solved
-// - Files deleted
-// -
+// Monitors log files.
+// Part 1: Make sure we do not load massive log files into memory
+// Part 2: Evaluate log file line capture conditions
 func monitorLog(logFile LogFile, loglines chan LogLine) {
 
 	// Open the log file

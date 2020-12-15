@@ -26,14 +26,23 @@ func process(settings *Settings) {
 	// Create a channel queue that is as large as the number of threads we have.
 	uptimes := make(chan UptimeResponse, len(settings.UptimeRequestList))
 	loglines := make(chan LogLine, 100)
+	sysinfos := make(chan SystemMonitorRequest)
 
 	// Reset the results structure and set the base things from the settings
 	var results Results
 	ResetResult(settings, &results)
 
 	// Start all the monitoring services
+
+	// Monitor specified endpoints to make sure they are up and running
 	// StartEndpointMonitoring(settings, uptimes)
-	StartLogMonitoring(settings, loglines)
+
+	// Monitor the specified log files and send the log lines to this thread
+	// for further processing
+	// StartLogMonitoring(settings, loglines)
+
+	// Monitor the system - CPU, Ram and Diskspace on specified directories
+	StartSystemMonitoring(settings, sysinfos)
 
 	// Watch for messages from the channels and add them to the results structure
 	// We need to handle the case that logs are filled faster than this function

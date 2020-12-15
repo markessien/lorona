@@ -69,30 +69,19 @@ logs:
 
 system:
   drivespace:
-    alert_level: 50GB
+    alert-level: 50GB
     repeat-alert: daily
     locations:
       - /var/www
       - /etc/nginx
 
   cpu:
-    alert_level: 70%
+    alert-level: 70%
     repeat-alert: daily
 
   ram:
-    alert_level: 70%
+    alert-level: 70%
     repeat-alert: daily
-
-  process-monitor:
-    repeat-alert: 1min
-    processes:
-      - docker
-
-  heavy-load-watcher:
-    minimum-time: 1m
-    watch-cpu: yes
-    watch-ram: yes
-    watch-network: yes
 
 backups-monitor:
   backup-folder: /var/db/backups

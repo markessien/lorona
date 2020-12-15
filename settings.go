@@ -10,86 +10,20 @@ import (
 	"gopkg.in/yaml.v2"
 )
 
-type SX map[string]interface{}
-
-// Config struct for webapp config
+// Config structure for the requests to this app that the user has
 type Settings struct {
-	ContainerName        string `yaml:"container-name"`
-	ContainerSupport     string `yaml:"container-support"`
-	ContainerDescription string `yaml:"container-description"`
-	DataFile             string `yaml:"data-file"`
-
-	LogFiles []LogFile `yaml:"logs"`
-
-	UptimeRequestList []UptimeRequest `yaml:"uptime"`
+	ContainerName        string               `yaml:"container-name"`
+	ContainerSupport     string               `yaml:"container-support"`
+	ContainerDescription string               `yaml:"container-description"` // A user set description of what this container (or system) is all about
+	DataFile             string               `yaml:"data-file"`             // The location of the data file where we will store resumption points for logs
+	LogFiles             []LogFile            `yaml:"logs"`                  // Requests for the log files we want to monitor
+	UptimeRequestList    []UptimeRequest      `yaml:"uptime"`                // Contains all endpoints to be monitored
+	SysMonitorRequest    SystemMonitorRequest `yaml:"system"`                // Requests for the system parameters we want to monitor
 }
 
-// Loads the last settings file. We need it for some stuff
-// like info about the log files
-func LoadData(settings *Settings) error {
-
-	dataFile, err := os.Open(settings.DataFile)
-	if err != nil {
-		fmt.Println(err)
-		return err
-	}
-
-	dataSettings := Settings{}
-
-	dataDecoder := gob.NewDecoder(dataFile)
-	err = dataDecoder.Decode(&dataSettings)
-
-	if err != nil {
-		fmt.Println(err)
-		return err
-	}
-
-	// We transfer all the position info from the log files to the settings
-	// structure. This position info is used to make sure we read from a pos
-	// advanced in the file (efficiency)
-
-	// Yes, I know we can do this better, but monitored log files should
-	// be a small number, so a double loop should not matter.
-	for _, logFileData := range dataSettings.LogFiles {
-
-		for i := 0; i < len(settings.LogFiles); i++ {
-			l := settings.LogFiles[i].Filepath
-			if l == logFileData.Filepath {
-				settings.LogFiles[i].LastTimestamp = logFileData.LastTimestamp
-				settings.LogFiles[i].LastByteRead = logFileData.LastByteRead
-				settings.LogFiles[i].LogFirstFewLines = logFileData.LogFirstFewLines
-				break
-			}
-		}
-	}
-
-	dataFile.Close()
-	return nil
-}
-
-// Saves our settings structure. We update our settings
-// structure regularly with info like last read point in
-// files, so this persists it, in case tool is restarted
-func SaveData(settings *Settings) error {
-
-	// create a file
-	dataFile, err := os.Create(settings.DataFile)
-
-	if err != nil {
-		fmt.Println(err)
-		return err
-	}
-
-	// serialize the data
-	dataEncoder := gob.NewEncoder(dataFile)
-	dataEncoder.Encode(&settings)
-
-	dataFile.Close()
-
-	return nil
-}
-
-// Load settings from the settings.yaml file
+// Load settings from the settings.yaml file. All the settings are taken
+// from the YAML files and put into the Settings structure above. Also, if
+// some required things are not set, we assign sensible defaults here too.
 func LoadSettings(settingsFile string) (*Settings, error) {
 
 	settings := &Settings{}
@@ -189,4 +123,69 @@ func LoadLogFileRegex() (error, map[string]string) {
 // Print ersatz
 func print(str string) {
 	fmt.Println(str)
+}
+
+// Loads the last settings file. We need it for some stuff
+// like info about the log files
+func LoadData(settings *Settings) error {
+
+	dataFile, err := os.Open(settings.DataFile)
+	if err != nil {
+		fmt.Println(err)
+		return err
+	}
+
+	dataSettings := Settings{}
+
+	dataDecoder := gob.NewDecoder(dataFile)
+	err = dataDecoder.Decode(&dataSettings)
+
+	if err != nil {
+		fmt.Println(err)
+		return err
+	}
+
+	// We transfer all the position info from the log files to the settings
+	// structure. This position info is used to make sure we read from a pos
+	// advanced in the file (efficiency)
+
+	// Yes, I know we can do this better, but monitored log files should
+	// be a small number, so a double loop should not matter.
+	for _, logFileData := range dataSettings.LogFiles {
+
+		for i := 0; i < len(settings.LogFiles); i++ {
+			l := settings.LogFiles[i].Filepath
+			if l == logFileData.Filepath {
+				settings.LogFiles[i].LastTimestamp = logFileData.LastTimestamp
+				settings.LogFiles[i].LastByteRead = logFileData.LastByteRead
+				settings.LogFiles[i].LogFirstFewLines = logFileData.LogFirstFewLines
+				break
+			}
+		}
+	}
+
+	dataFile.Close()
+	return nil
+}
+
+// Saves our settings structure. We update our settings
+// structure regularly with info like last read point in
+// files, so this persists it, in case tool is restarted
+func SaveData(settings *Settings) error {
+
+	// create a file
+	dataFile, err := os.Create(settings.DataFile)
+
+	if err != nil {
+		fmt.Println(err)
+		return err
+	}
+
+	// serialize the data
+	dataEncoder := gob.NewEncoder(dataFile)
+	dataEncoder.Encode(&settings)
+
+	dataFile.Close()
+
+	return nil
 }
