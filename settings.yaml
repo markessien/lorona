@@ -45,17 +45,17 @@ logs:
     alert-interval: daily
     type: nginx-error-log2  # This has to correspond to a name in the log_formats file
     time-format: apache-timestamp
-    capture-line-if:
-      - errorlevel = warning
-      - errorlevel = error THEN alert immediately
+    capture-line-if: # If any of the below is true
+      - errorlevel == "warning" # This is the format: https://github.com/Knetic/govaluate. Anything that it parses works
+      - errorlevel == "error" THEN alert immediately
 
   - name: nginx-access
-    filepath: ./private_logs/access_100m.log
+    filepath: ./sample_logs/access.log
     type: nginx-access-log
-    time-format: apache-timestamp
-    capture-line-if:
-      - statuscode = 404
-      - statuscode > 500 AND statuscode < 599 THEN alert immediately
+    time-format: apache-timestamp 
+    capture-line-if: 
+      - statuscode == "301"
+      - int_statuscode > 400 && int_statuscode < 402 THEN alert immediately
 
   - name: laravel
     filepath: ./sample_logs/laravel.log

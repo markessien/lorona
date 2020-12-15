@@ -6,8 +6,10 @@ import (
 	"os"
 	"regexp"
 	"strconv"
+	"strings"
 	"time"
 
+	"github.com/Knetic/govaluate"
 	"github.com/araddon/dateparse"
 )
 
@@ -45,8 +47,8 @@ type LogFile struct {
 
 // TODO:
 // Keep the log file looping
-// Open the log file from where I last stopped
-// Convert the timestamp format
+// Run the line evaluation to decide if to keep it
+// Check the timestamp to make sure it is newer than last we had
 // Notes:
 // https://github.com/Knetic/govaluate
 // https://github.com/oleksandr/conditions
@@ -166,13 +168,25 @@ func monitorLog(logFile LogFile, loglines chan LogLine) {
 			continue
 		}
 
+		// If set to true, this log line will not be added to the final log
+		var ignore_this_line = false
+
+		// This is where all the values for all the fields will be stored. This can be used
+		// for the evaluation of the condition if this particular line should be added to
+		// the log
+		condition_parameters := make(map[string]interface{}, 8)
+
 		// Get each value
 		for i, name := range expression.SubexpNames() {
 			if name == "errorlevel" {
 				logline.ErrorLevel = match[i]
+				// Comment A: Storing the value of each field in this map. It will be used for condition evaluation
+				condition_parameters["errorlevel"] = match[i]
 			} else if name == "description" {
 				logline.Description = match[i]
+				condition_parameters["description"] = match[i]
 			} else if name == "timestamp" {
+
 				logline.TimeStamp = match[i]
 
 				if len(logFile.TimeFormat) > 0 {
@@ -188,22 +202,71 @@ func monitorLog(logFile LogFile, loglines chan LogLine) {
 					}
 				}
 
+				// See Comment A
+				condition_parameters["timestamp"] = match[i]
+				condition_parameters["time(timestamp)"] = logline.ParsedtimeStamp // time(timestamp) can be used in conditionals
+
 				// We will need to check if this log has already been read (earlier than 'lastread')
-				// If so, we continue
+				// If so, we continue. Use ignore_this_line
+
 			} else if name == "ipaddress" {
 				logline.SourceIP = match[i]
+				condition_parameters["ipaddress"] = match[i]
 			} else if name == "statuscode" {
 				logline.StatusCode = match[i]
+				condition_parameters["statuscode"] = match[i]
+				condition_parameters["int_statuscode"], _ = strconv.Atoi(match[i])
 			} else if name == "useragent" {
 				logline.UserAgent = match[i]
+				condition_parameters["useragent"] = match[i]
 			} else if name == "referrer" {
 				logline.Referrer = match[i]
+				condition_parameters["referrer"] = match[i]
 			} else if name == "bytessent" {
 				logline.ResponseSize, _ = strconv.ParseInt(match[i], 10, 64) // convert to a 64bit int in base 10
+				condition_parameters["bytessent"] = match[i]
+				condition_parameters["int_bytessent"] = logline.ResponseSize
 			}
 		}
 
-		loglines <- logline
+		// We run the evaluator to figure out if we need to even add this line to the logs
+		// The user can specify conditions in the settings yaml file for when a log should
+		// be captured. We use a generic evaluator, which creates maximum flexibility for
+		// the user
+
+		for _, condition := range logFile.CaptureConditions {
+
+			ignore_this_line = true
+			// condition is something like "statuscode = 404" or "statuscode > 500 AND statuscode < 599 THEN alert immediately"
+
+			// First we remove the 'then' part as it's not part of the conditional
+			then_pos := strings.Index(strings.ToLower(condition), "then")
+			if then_pos > 0 {
+				then_part := condition[then_pos:len(condition)]
+				condition = condition[0 : then_pos-1] // remove the THEN part from condition
+				print("Then condition not working yet " + then_part)
+			}
+
+			expression, err := govaluate.NewEvaluableExpression(condition)
+			if err != nil {
+				print("Could not evaluate expression " + condition)
+				continue
+			}
+
+			// We have the parameters and their value, so we can now run the specified conditional
+			// to know if this line should be added or not
+			result, err := expression.Evaluate(condition_parameters)
+			// result is now set to "true", the bool value.
+			if err == nil && result == true {
+				ignore_this_line = false
+				break
+			}
+		}
+
+		if ignore_this_line == false {
+			loglines <- logline
+		}
+
 	}
 
 }
