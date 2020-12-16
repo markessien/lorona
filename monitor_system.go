@@ -109,8 +109,11 @@ func monitorSystem(request SystemMonitorRequest, interval time.Duration, sysinfo
 
 		}
 
+		// Push results to the main thread thorugh a channel
 		sysinfos <- sys
 
+		// Reset the drive usage, so it does not infinitely grow
+		sys.DriveUsage = []SysDriveInfo{}
 		time.Sleep(interval)
 	}
 
