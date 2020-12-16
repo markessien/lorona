@@ -10,6 +10,18 @@ import (
 	"gopkg.in/yaml.v2"
 )
 
+// This contains the result format that will be converted to json
+// and sent to the remove receiver.
+type Results struct {
+	ContainerName        string
+	ContainerSupport     string
+	ContainerDescription string
+	FileFormat           string
+	UptimeList           []UptimeResponse
+	LoglineList          []LogLine
+	SysMonitorInfoList   []SysMonitorInfo
+}
+
 // Config structure for the requests to this app that the user has
 type Settings struct {
 	ContainerName        string               `yaml:"container-name"`

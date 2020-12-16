@@ -1,25 +1,10 @@
 package main
 
 import (
-	"fmt"
+	"time"
 
-	"github.com/shirou/gopsutil/host"
-	"github.com/shirou/gopsutil/v3/mem"
+	"github.com/shirou/gopsutil/v3/host"
 )
-
-// https://github.com/shirou/gopsutil
-// https://github.com/ricochet2200/go-disk-usage/tree/master/du
-
-// Interested in:
-// CPU Percent: https://godoc.org/github.com/shirou/gopsutil/cpu (ALL CPUs and Combined)
-// Disk Usage: https://godoc.org/github.com/shirou/gopsutil/disk#Usage
-// HostID: https://godoc.org/github.com/shirou/gopsutil/host#HostID
-// Warnings: https://godoc.org/github.com/shirou/gopsutil/host#Warnings
-// Load Avg: https://godoc.org/github.com/shirou/gopsutil/load#Avg
-// Net Addre: https://godoc.org/github.com/shirou/gopsutil/net#Addr
-// Docker per item: https://godoc.org/github.com/shirou/gopsutil/net#Addr
-
-// Because of volume of info, limit it
 
 // Used to stop the monitoring threads neatly
 var stopSystemMonitoring bool
@@ -46,24 +31,30 @@ type SysMonitorInfo struct {
 // A structure that represents a single request for system
 // info - e.g just CPU
 type SystemMonitorItem struct {
-	AlertLevel  string   `yaml:"alert-level"`
-	RepeatAlert string   `yaml:"repeat-alert"`
-	Locations   []string `yaml:"locations"`
+	AlertLevel  string
+	RepeatAlert string
+	Locations   []string
 }
 
 // The structure that saves the request for system info
 // from the settings file
 type SystemMonitorRequest struct {
-	Cpu        SystemMonitorItem `yaml:"cpu"`
-	Ram        SystemMonitorItem `yaml:"ram"`
-	DriveSpace SystemMonitorItem `yaml:"drivespace"`
+	Cpu           SystemMonitorItem `yaml:"cpu"`
+	Ram           SystemMonitorItem `yaml:"ram"`
+	DriveSpace    SystemMonitorItem `yaml:"drivespace"`
+	CheckInterval string            `yaml:"check-interval"`
 }
 
-func StartSystemMonitoring(settings *Settings, sysinfos chan SystemMonitorRequest) error {
+func StartSystemMonitoring(settings *Settings, sysinfos chan SysMonitorInfo) error {
 
 	stopSystemMonitoring = false
 
-	go monitorSystem(sysinfos)
+	duration, err := time.ParseDuration(settings.SysMonitorRequest.CheckInterval)
+	if err != nil {
+		print("Could not parse requested interval: " + settings.SysMonitorRequest.CheckInterval)
+	} else {
+		go monitorSystem(settings.SysMonitorRequest, duration, sysinfos)
+	}
 
 	return nil
 }
@@ -72,21 +63,46 @@ func StopSystemMonitoring() {
 	stopSystemMonitoring = true
 }
 
+// https://github.com/shirou/gopsutil
+// https://github.com/ricochet2200/go-disk-usage/tree/master/du
+
+// Interested in:
+// CPU Percent: https://godoc.org/github.com/shirou/gopsutil/cpu (ALL CPUs and Combined)
+// Disk Usage: https://godoc.org/github.com/shirou/gopsutil/disk#Usage
+// HostID: https://godoc.org/github.com/shirou/gopsutil/host#HostID
+// Warnings: https://godoc.org/github.com/shirou/gopsutil/host#Warnings
+// Load Avg: https://godoc.org/github.com/shirou/gopsutil/load#Avg
+// Net Addre: https://godoc.org/github.com/shirou/gopsutil/net#Addr
+// Docker per item: https://godoc.org/github.com/shirou/gopsutil/net#Addr
+
+// Because of volume of info, limit it
+
 // Keeps polling the system to get all the values and pushes them
 // via a channel to the main thread
-func monitorSystem(sysinfos chan SystemMonitorRequest) {
+func monitorSystem(request SystemMonitorRequest, interval time.Duration, sysinfos chan SysMonitorInfo) {
 
 	// Docs are here: https://godoc.org/github.com/shirou/gopsutil
 
-	v, _ := mem.VirtualMemory()
+	sys := SysMonitorInfo{}
+	sys.HostName, _ = host.HostID()
 
-	u, _ := host.Uptime()
+	/*
+		v, _ := mem.VirtualMemory()
 
-	fmt.Printf("Test: %v", u)
-	// almost every return value is a struct
-	fmt.Printf("Total: %v, Free:%v, UsedPercent:%f%%\n", v.Total, v.Free, v.UsedPercent)
+		u, _ :=
 
-	// convert to JSON. String() is also implemented
-	fmt.Println(v)
+			fmt.Printf("Test: %v", u)
+		// almost every return value is a struct
+		fmt.Printf("Total: %v, Free:%v, UsedPercent:%f%%\n", v.Total, v.Free, v.UsedPercent)
+
+		// convert to JSON. String() is also implemented
+		fmt.Println(v)
+	*/
+
+	for {
+		time.Sleep(interval)
+
+		sysinfos <- sys
+	}
 
 }

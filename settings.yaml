@@ -68,6 +68,8 @@ logs:
       - querytime > 10s
 
 system:
+  check-interval: 30s
+  
   drivespace:
     alert-level: 50GB
     repeat-alert: daily

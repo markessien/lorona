@@ -26,7 +26,7 @@ func process(settings *Settings) {
 	// Create a channel queue that is as large as the number of threads we have.
 	uptimes := make(chan UptimeResponse, len(settings.UptimeRequestList))
 	loglines := make(chan LogLine, 100)
-	sysinfos := make(chan SystemMonitorRequest)
+	sysinfos := make(chan SysMonitorInfo)
 
 	// Reset the results structure and set the base things from the settings
 	var results Results
@@ -60,11 +60,14 @@ func process(settings *Settings) {
 			}
 
 			fmt.Printf("Time: %s Error Level: %s Description: %s\n", logline.TimeStamp, logline.ErrorLevel, description)
-			results.Loglines = append(results.Loglines, logline)
+			results.LoglineList = append(results.LoglineList, logline)
 		case uptime := <-uptimes:
 
 			// Add this new uptime result to the list
 			results.UptimeList = append(results.UptimeList, uptime)
+
+		case sysinfo := <-sysinfos:
+			results.SysMonitorInfoList = append(results.SysMonitorInfoList, sysinfo)
 
 		case <-time.After(time.Second * 5): // does this do what we think it does? Check.
 		default:
@@ -87,5 +90,6 @@ func ResetResult(settings *Settings, results *Results) {
 	results.ContainerSupport = settings.ContainerSupport
 	results.ContainerDescription = settings.ContainerDescription
 	results.UptimeList = []UptimeResponse{}
-	results.Loglines = []LogLine{}
+	results.LoglineList = []LogLine{}
+	results.SysMonitorInfoList = []SysMonitorInfo{}
 }
