@@ -45,6 +45,7 @@ func process(settings *Settings) {
 	// Monitor the system - CPU, Ram and Diskspace on specified directories
 	// StartSystemMonitoring(settings, sysinfos)
 
+	// Monitor backups
 	StartBackupsMonitoring(settings, backups)
 
 	// Watch for messages from the channels and add them to the results structure
