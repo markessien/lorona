@@ -3,6 +3,9 @@ package main
 import (
 	"time"
 
+	"github.com/shirou/gopsutil/load"
+	"github.com/shirou/gopsutil/v3/cpu"
+	"github.com/shirou/gopsutil/v3/disk"
 	"github.com/shirou/gopsutil/v3/host"
 )
 
@@ -15,17 +18,20 @@ type SysDriveInfo struct {
 	PercentUsed float64
 	Capacity    uint64
 	Used        uint64
+	Fstype      string
 }
 
 // The structure that saves all the information about the
 // system that we want to provide
 type SysMonitorInfo struct {
-	HostName           string
-	NetAddress         string
-	CpuUsagePercent    float64
-	SystemWarnings     []string
-	LoadAveragePercent float64
-	DriveUsage         []SysDriveInfo
+	HostName             string
+	CpuUsagePercent      float64
+	SystemWarnings       []string // Can we get this?
+	LoadAveragePercent1  float64
+	LoadAveragePercent5  float64
+	LoadAveragePercent15 float64
+	Uptime               uint64
+	DriveUsage           []SysDriveInfo
 }
 
 // A structure that represents a single request for system
@@ -63,46 +69,49 @@ func StopSystemMonitoring() {
 	stopSystemMonitoring = true
 }
 
-// https://github.com/shirou/gopsutil
-// https://github.com/ricochet2200/go-disk-usage/tree/master/du
-
-// Interested in:
-// CPU Percent: https://godoc.org/github.com/shirou/gopsutil/cpu (ALL CPUs and Combined)
-// Disk Usage: https://godoc.org/github.com/shirou/gopsutil/disk#Usage
-// HostID: https://godoc.org/github.com/shirou/gopsutil/host#HostID
-// Warnings: https://godoc.org/github.com/shirou/gopsutil/host#Warnings
-// Load Avg: https://godoc.org/github.com/shirou/gopsutil/load#Avg
-// Net Addre: https://godoc.org/github.com/shirou/gopsutil/net#Addr
-// Docker per item: https://godoc.org/github.com/shirou/gopsutil/net#Addr
-
-// Because of volume of info, limit it
-
 // Keeps polling the system to get all the values and pushes them
 // via a channel to the main thread
 func monitorSystem(request SystemMonitorRequest, interval time.Duration, sysinfos chan SysMonitorInfo) {
 
-	// Docs are here: https://godoc.org/github.com/shirou/gopsutil
-
 	sys := SysMonitorInfo{}
+
+	// Get Hostname
+	// HostID: https://godoc.org/github.com/shirou/gopsutil/host#HostID
 	sys.HostName, _ = host.HostID()
 
-	/*
-		v, _ := mem.VirtualMemory()
-
-		u, _ :=
-
-			fmt.Printf("Test: %v", u)
-		// almost every return value is a struct
-		fmt.Printf("Total: %v, Free:%v, UsedPercent:%f%%\n", v.Total, v.Free, v.UsedPercent)
-
-		// convert to JSON. String() is also implemented
-		fmt.Println(v)
-	*/
-
 	for {
-		time.Sleep(interval)
+
+		sys.Uptime, _ = host.Uptime()
+
+		// Get CPU usage since last call
+		cpus, _ := cpu.Percent(0, false)
+		sys.CpuUsagePercent = cpus[0]
+
+		// Get the average CPU load
+		avg, _ := load.Avg()
+		sys.LoadAveragePercent1 = avg.Load1
+		sys.LoadAveragePercent5 = avg.Load5
+		sys.LoadAveragePercent15 = avg.Load15
+
+		// Loop over all the requests to monitor drives
+		for _, drivePath := range request.DriveSpace.Locations {
+
+			var driveInfoResponse SysDriveInfo
+			stat, err := disk.Usage(drivePath)
+			if err == nil {
+				driveInfoResponse.Path = stat.Path
+				driveInfoResponse.Fstype = stat.Fstype
+				driveInfoResponse.Used = stat.Used
+				driveInfoResponse.Capacity = stat.Total
+				driveInfoResponse.PercentUsed = stat.UsedPercent
+				sys.DriveUsage = append(sys.DriveUsage, driveInfoResponse)
+			}
+
+		}
 
 		sysinfos <- sys
+
+		time.Sleep(interval)
 	}
 
 }

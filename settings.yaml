@@ -69,13 +69,13 @@ logs:
 
 system:
   check-interval: 30s
-  
+
   drivespace:
     alert-level: 50GB
     repeat-alert: daily
     locations:
-      - /var/www
-      - /etc/nginx
+      - c:/
+      - d:/
 
   cpu:
     alert-level: 70%
