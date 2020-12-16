@@ -24,13 +24,14 @@ type Results struct {
 
 // Config structure for the requests to this app that the user has
 type Settings struct {
-	ContainerName        string               `yaml:"container-name"`
-	ContainerSupport     string               `yaml:"container-support"`
-	ContainerDescription string               `yaml:"container-description"` // A user set description of what this container (or system) is all about
-	DataFile             string               `yaml:"data-file"`             // The location of the data file where we will store resumption points for logs
-	LogFiles             []LogFile            `yaml:"logs"`                  // Requests for the log files we want to monitor
-	UptimeRequestList    []UptimeRequest      `yaml:"uptime"`                // Contains all endpoints to be monitored
-	SysMonitorRequest    SystemMonitorRequest `yaml:"system"`                // Requests for the system parameters we want to monitor
+	ContainerName        string                 `yaml:"container-name"`
+	ContainerSupport     string                 `yaml:"container-support"`
+	ContainerDescription string                 `yaml:"container-description"` // A user set description of what this container (or system) is all about
+	DataFile             string                 `yaml:"data-file"`             // The location of the data file where we will store resumption points for logs
+	LogFiles             []LogFile              `yaml:"logs"`                  // Requests for the log files we want to monitor
+	UptimeRequestList    []UptimeRequest        `yaml:"uptime"`                // Contains all endpoints to be monitored
+	SysMonitorRequest    SystemMonitorRequest   `yaml:"system"`                // Requests for the system parameters we want to monitor
+	BackupMonitorRequest []BackupMonitorRequest `yaml:"backups-monitor"`       // Requests for the log files we want to monitor
 }
 
 // Load settings from the settings.yaml file. All the settings are taken

@@ -86,16 +86,18 @@ system:
     repeat-alert: daily
 
 backups-monitor:
-  backup-folder: /var/db/backups
-  backup-minimum-file-size: 30M
-  remote-backup-format: s3
-  remote-backup-location: s2
-  check-backups: daily
-  check-backups-time: 12am
+  - backup-folder: c:/backups/1
+    backup-minimum-file-size: 30M
+    remote-backup-format: s3
+    remote-backup-url: s2
+    check-backups: daily
+    check-backups-time: 12am
+  - backup-folder: c:/backups/2
+    backup-minimum-file-size: 2M
 
 alerts:
   handler: https://mail.lorona.io/
-  emails:
+  emails: 
     - mark@hng.tech
     - simon@hng.tech
 

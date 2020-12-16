@@ -27,6 +27,7 @@ func process(settings *Settings) {
 	uptimes := make(chan UptimeResponse, len(settings.UptimeRequestList))
 	loglines := make(chan LogLine, 100)
 	sysinfos := make(chan SysMonitorInfo)
+	backups := make(chan BackupInfo)
 
 	// Reset the results structure and set the base things from the settings
 	var results Results
@@ -42,7 +43,9 @@ func process(settings *Settings) {
 	// StartLogMonitoring(settings, loglines)
 
 	// Monitor the system - CPU, Ram and Diskspace on specified directories
-	StartSystemMonitoring(settings, sysinfos)
+	// StartSystemMonitoring(settings, sysinfos)
+
+	StartBackupsMonitoring(settings, backups)
 
 	// Watch for messages from the channels and add them to the results structure
 	// We need to handle the case that logs are filled faster than this function
