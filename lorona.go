@@ -46,7 +46,8 @@ func process(settings *Settings) {
 	// StartSystemMonitoring(settings, sysinfos)
 
 	// Monitor backups
-	StartBackupsMonitoring(settings, backups)
+	// StartBackupsMonitoring(settings, backups)
+	PromPublish()
 
 	// Watch for messages from the channels and add them to the results structure
 	// We need to handle the case that logs are filled faster than this function
@@ -72,6 +73,9 @@ func process(settings *Settings) {
 
 		case sysinfo := <-sysinfos:
 			results.SysMonitorInfoList = append(results.SysMonitorInfoList, sysinfo)
+
+		case backupInfo := <-backups:
+			print("hello" + backupInfo.ErrorMessage)
 
 		case <-time.After(time.Second * 5): // does this do what we think it does? Check.
 		default:
