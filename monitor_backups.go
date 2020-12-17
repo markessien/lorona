@@ -2,14 +2,19 @@ package main
 
 import (
 	"fmt"
+	"io/ioutil"
+	"os"
 	"time"
 )
 
 // The UptimeResponse structure is used to record the results
 // from a single uptime query
 type BackupInfo struct {
-	Folder      string
-	WasBackedUp bool
+	Folder              string
+	LastBackup          time.Time
+	WasBackedUp         bool
+	ErrorMessage        string
+	ExistingBackupFiles []string
 }
 
 type BackupMonitorRequest struct {
@@ -53,7 +58,7 @@ func StartBackupsMonitoring(settings *Settings, backups chan BackupInfo) error {
 
 		if err == nil {
 			if len(settings.BackupMonitorRequest) > 0 {
-				f := startBackupMonitoring(backupMonitorRequest.Folder)
+				f := startBackupMonitoring(backupMonitorRequest.Folder, backups)
 				_ = time.AfterFunc(timeTillStart, f)
 			}
 		}
@@ -63,12 +68,70 @@ func StartBackupsMonitoring(settings *Settings, backups chan BackupInfo) error {
 	return nil
 }
 
-func startBackupMonitoring(backupFolder string) func() {
+func startBackupMonitoring(backupFolder string, knownBackupFiles []string, backups chan BackupInfo) func() {
 	return func() {
-		checkForBackups(backupFolder)
+		checkForBackups(backupFolder, knownBackupFiles, backups)
 	}
 }
 
-func checkForBackups(backupFolder string) {
-	fmt.Printf("creating func with '%s'\n", backupFolder)
+func checkForBackups(backupFolder string, knownBackupFiles []string, backups chan BackupInfo) {
+
+	// Let's create the next tick first of all
+
+	// How does it work with the params
+	f := startBackupMonitoring(backupMonitorRequest.Folder, backups)
+	_ = time.AfterFunc(24*time.Hour, f)
+
+	var backupInfo BackupInfo
+
+	// Open the backup folder to list the files in it
+	files, err := ioutil.ReadDir(backupFolder)
+	if err != nil {
+
+		// If it fails, then obviously no backup
+		backupInfo.Folder = backupFolder
+		backupInfo.WasBackedUp = false
+		backupInfo.LastBackup = time.Date(1900, 0, 0, 0, 0, 0, 0, nil)
+		backupInfo.ErrorMessage = "Backup folder not found"
+		backups <- backupInfo
+		return
+	}
+
+	if len(files) > 300 {
+		backupInfo.Folder = backupFolder
+		backupInfo.WasBackedUp = false
+		backupInfo.LastBackup = time.Date(1900, 0, 0, 0, 0, 0, 0, nil)
+		backupInfo.ErrorMessage = "Too many files in the backup folder"
+		backups <- backupInfo
+		return
+	}
+
+	var existingBackupFiles []string
+
+	// List all files in the backup folder
+	for _, f := range files {
+
+		existingBackupFiles = append(existingBackupFiles, f.Filepath)
+		found := false
+		for _, b := range knownBackupFiles {
+			if f.Filepath == b {
+				// We already know this backup file
+				found = true
+				break
+			}
+		}
+
+		backupFound = false
+		if found == false {
+			// We have a new file in the directory
+			fileStat := os.Stat(f.Filepath)
+
+			if fileStat.Size() > 30*MB {
+				backupFound = true
+			}
+		}
+	}
+
+	backupInfo.ExistingBackupFiles = existingBackupFiles
+	backups <- backupInfo
 }

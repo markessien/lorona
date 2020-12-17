@@ -106,6 +106,10 @@ func monitorLog(logFile LogFile, loglines chan LogLine) {
 		panic(err3)
 	}
 
+	// Confirm that it's the same file by looking at first few lines
+	// If the filesize is larger than 100, we check for the signature
+	// at the start. This is used to know if the log was rotated or
+	// changed
 	if fi.Size() > 100 {
 
 		// Create a buffer we will store the first few lines of the log

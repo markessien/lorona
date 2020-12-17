@@ -32,6 +32,7 @@ type Settings struct {
 	UptimeRequestList    []UptimeRequest        `yaml:"uptime"`                // Contains all endpoints to be monitored
 	SysMonitorRequest    SystemMonitorRequest   `yaml:"system"`                // Requests for the system parameters we want to monitor
 	BackupMonitorRequest []BackupMonitorRequest `yaml:"backups-monitor"`       // Requests for the log files we want to monitor
+	ObservedBackupFiles  []string               // This is where we store the backup files we have seen in our backup folders already
 }
 
 // Load settings from the settings.yaml file. All the settings are taken
