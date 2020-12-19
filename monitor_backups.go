@@ -17,11 +17,10 @@ var tickRepeatFrequency time.Duration
 // The UptimeResponse structure is used to record the results
 // from a single uptime query
 type BackupInfo struct {
-	Folder              string
-	LastBackup          time.Time
-	WasBackedUp         bool
-	ErrorMessage        string
-	ExistingBackupFiles []string
+	Folder      string
+	LastBackup  time.Time
+	WasBackedUp bool
+	Message     string
 }
 
 type BackupMonitorRequest struct {
@@ -101,47 +100,49 @@ func checkForBackups(backupFolder string, backups chan BackupInfo) {
 	// ---
 
 	var backupInfo BackupInfo
+	backupInfo.Folder = backupFolder
+	backupInfo.WasBackedUp = false
+	backupInfo.LastBackup = time.Date(1900, 0, 0, 0, 0, 0, 0, time.UTC)
 
 	// Open the backup folder to list the files in it
 	files, err := ioutil.ReadDir(backupFolder)
 	if err != nil {
-
-		// If it fails, then obviously no backup
-		backupInfo.Folder = backupFolder
-		backupInfo.WasBackedUp = false
-		backupInfo.LastBackup = time.Date(1900, 0, 0, 0, 0, 0, 0, time.UTC)
-		backupInfo.ErrorMessage = "Backup folder not found"
+		backupInfo.Message = "Backup folder not found"
 		backups <- backupInfo
 		return
 	}
 
 	if len(files) > 300 {
-		backupInfo.Folder = backupFolder
-		backupInfo.WasBackedUp = false
-		backupInfo.LastBackup = time.Date(1900, 0, 0, 0, 0, 0, 0, time.UTC)
-		backupInfo.ErrorMessage = "Too many files in the backup folder"
+		backupInfo.Message = "Too many files in the backup folder"
 		backups <- backupInfo
 		return
 	}
 
 	if len(files) == 0 {
-		backupInfo.Folder = backupFolder
-		backupInfo.WasBackedUp = false
-		backupInfo.LastBackup = time.Date(1900, 0, 0, 0, 0, 0, 0, time.UTC)
-		backupInfo.ErrorMessage = "No files in the backup folder"
+		backupInfo.Message = "No files in the backup folder"
 		backups <- backupInfo
 		return
 	}
 
 	var existingBackupFiles []string
 
+	// backupFound := true
+
 	// List all files in the backup folder
 	for _, f := range files {
 
-		fileStat, err := os.Stat(f.Name())
+		fullPath := backupInfo.Folder + "/" + f.Name()
+		fileStat, err := os.Stat(fullPath)
 
-		if err == nil && fileStat.Size() > 1024*1024*30 {
+		if err == nil && fileStat.Size() >= 0 /*1024*1024*30*/ {
 			print("Backup found")
+			// backupFound = true
+
+			backupInfo.Message = "A new backup file was found: " + fullPath
+			backupInfo.WasBackedUp = true
+			backupInfo.LastBackup = fileStat.ModTime()
+
+			existingBackupFiles = append(existingBackupFiles, fullPath)
 		}
 
 		/*
@@ -167,7 +168,6 @@ func checkForBackups(backupFolder string, backups chan BackupInfo) {
 		*/
 	}
 
-	backupInfo.ExistingBackupFiles = existingBackupFiles
 	backups <- backupInfo
 
 }
