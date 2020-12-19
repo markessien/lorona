@@ -6,12 +6,15 @@ import (
 	"io/ioutil"
 	"os"
 	"strconv"
+	"sync"
 	"time"
 )
 
 // When we observe a file, we serve it in this persistent
 // variable. We can use this to discover new files added
-var knownBackupFiles []string
+// The filepath mapped to the filesize
+var knownBackupFiles map[string]int64
+var mutex = &sync.Mutex{}
 var tickRepeatFrequency time.Duration
 
 // The UptimeResponse structure is used to record the results
@@ -33,6 +36,8 @@ type BackupMonitorRequest struct {
 }
 
 func StartBackupsMonitoring(settings *Settings, backups chan BackupInfo) error {
+
+	knownBackupFiles = make(map[string]int64)
 
 	dataFile, err := os.Open("./known_backup_files.dat")
 	if err == nil {
@@ -124,8 +129,6 @@ func checkForBackups(backupFolder string, backups chan BackupInfo) {
 		return
 	}
 
-	var existingBackupFiles []string
-
 	// backupFound := true
 
 	// List all files in the backup folder
@@ -134,38 +137,25 @@ func checkForBackups(backupFolder string, backups chan BackupInfo) {
 		fullPath := backupInfo.Folder + "/" + f.Name()
 		fileStat, err := os.Stat(fullPath)
 
-		if err == nil && fileStat.Size() >= 0 /*1024*1024*30*/ {
+		if err == nil && fileStat.Size() >= 1024*1024*30 {
+
+			// Let's check if we have it already
+			if _, found := knownBackupFiles[fullPath]; found {
+				// In a previous tick, we found this file already.
+				// That mean that it's not a new backup file
+				continue
+			}
+
 			print("Backup found")
-			// backupFound = true
 
 			backupInfo.Message = "A new backup file was found: " + fullPath
 			backupInfo.WasBackedUp = true
 			backupInfo.LastBackup = fileStat.ModTime()
 
-			existingBackupFiles = append(existingBackupFiles, fullPath)
+			mutex.Lock()
+			knownBackupFiles[fullPath] = fileStat.Size()
+			mutex.Unlock()
 		}
-
-		/*
-					existingBackupFiles = append(existingBackupFiles, f.Filepath)
-			found := false
-			for _, b := range knownBackupFiles {
-				if f.Filepath == b {
-					// We already know this backup file
-					found = true
-					break
-				}
-			}
-
-			backupFound = false
-			if found == false {
-				// We have a new file in the directory
-				fileStat := os.Stat(f.Filepath)
-
-				if fileStat.Size() > 30*MB {
-					backupFound = true
-				}
-			}
-		*/
 	}
 
 	backups <- backupInfo
