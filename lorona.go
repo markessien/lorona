@@ -7,6 +7,19 @@ import (
 	"time"
 )
 
+// This contains the result format that will be converted to json
+// and sent to the remove receiver.
+type Results struct {
+	ContainerName        string
+	ContainerSupport     string
+	ContainerDescription string
+	FileFormat           string
+	UptimeList           []UptimeResponse
+	LoglineList          []LogLine
+	SysMonitorInfoList   []SysMonitorInfo
+	BackupInfoList       []BackupInfo
+}
+
 func main() {
 	fmt.Println("Welcome to Lorona!")
 
@@ -46,8 +59,8 @@ func process(settings *Settings) {
 	// StartSystemMonitoring(settings, sysinfos)
 
 	// Monitor backups
-	// StartBackupsMonitoring(settings, backups)
-	PromPublish()
+	StartBackupsMonitoring(settings, backups)
+	// PromPublish()
 
 	// Watch for messages from the channels and add them to the results structure
 	// We need to handle the case that logs are filled faster than this function
@@ -75,7 +88,7 @@ func process(settings *Settings) {
 			results.SysMonitorInfoList = append(results.SysMonitorInfoList, sysinfo)
 
 		case backupInfo := <-backups:
-			print("hello" + backupInfo.ErrorMessage)
+			results.BackupInfoList = append(results.BackupInfoList, backupInfo)
 
 		case <-time.After(time.Second * 5): // does this do what we think it does? Check.
 		default:
@@ -100,4 +113,5 @@ func ResetResult(settings *Settings, results *Results) {
 	results.UptimeList = []UptimeResponse{}
 	results.LoglineList = []LogLine{}
 	results.SysMonitorInfoList = []SysMonitorInfo{}
+	results.BackupInfoList = []BackupInfo{}
 }
