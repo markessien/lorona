@@ -70,7 +70,7 @@ func StartBackupsMonitoring(settings *Settings, backups chan BackupInfo) error {
 
 		// Get duration till our next tick
 		timeTillStart := time.Until(startTick)
-		timeTillStart = 1000 * 1000 * 3000
+		// timeTillStart = 1000 * 1000 * 3000
 		tickRepeatFrequency = timeTillStart
 		fmt.Println(timeTillStart)
 
@@ -100,8 +100,8 @@ func startBackupMonitoring(backupFolder string, backups chan BackupInfo) func() 
 func checkForBackups(backupFolder string, backups chan BackupInfo) {
 
 	// Let's create the next tick first of all
-	// f := startBackupMonitoring(backupFolder, backups)
-	// _ = time.AfterFunc(tickRepeatFrequency, f)
+	f := startBackupMonitoring(backupFolder, backups)
+	_ = time.AfterFunc(tickRepeatFrequency, f)
 	// ---
 
 	var backupInfo BackupInfo
@@ -157,6 +157,23 @@ func checkForBackups(backupFolder string, backups chan BackupInfo) {
 			mutex.Unlock()
 		}
 	}
+
+	if backupInfo.WasBackedUp == false {
+		backupInfo.Message = "No backup file found"
+	}
+
+	mutex.Lock()
+
+	// create a file
+	dataFile, err := os.Create("./known_backup_files.dat")
+	if err == nil {
+		// serialize the data
+		dataEncoder := gob.NewEncoder(dataFile)
+		dataEncoder.Encode(&knownBackupFiles)
+	}
+	dataFile.Close()
+
+	mutex.Unlock()
 
 	backups <- backupInfo
 

@@ -15,3 +15,4 @@
 # vendor/
 private_logs
 lorona.dat
+known_backup_files.dat
