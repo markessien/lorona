@@ -14,9 +14,9 @@ type Results struct {
 	ContainerSupport     string
 	ContainerDescription string
 	FileFormat           string
+	SysMonitorInfo       SysMonitorInfo
 	UptimeList           []UptimeResponse
 	LoglineList          []LogLine
-	SysMonitorInfoList   []SysMonitorInfo
 	BackupInfoList       []BackupInfo
 }
 
@@ -56,11 +56,11 @@ func process(settings *Settings) {
 	// StartLogMonitoring(settings, loglines)
 
 	// Monitor the system - CPU, Ram and Diskspace on specified directories
-	// StartSystemMonitoring(settings, sysinfos)
+	StartSystemMonitoring(settings, sysinfos)
 
 	// Monitor backups
-	StartBackupsMonitoring(settings, backups)
-	// PromPublish()
+	// StartBackupsMonitoring(settings, backups)
+	go PromPublish()
 
 	// Watch for messages from the channels and add them to the results structure
 	// We need to handle the case that logs are filled faster than this function
@@ -85,7 +85,8 @@ func process(settings *Settings) {
 			results.UptimeList = append(results.UptimeList, uptime)
 
 		case sysinfo := <-sysinfos:
-			results.SysMonitorInfoList = append(results.SysMonitorInfoList, sysinfo)
+			results.SysMonitorInfo = sysinfo
+			UpdateMetrics(&results)
 
 		case backupInfo := <-backups:
 			results.BackupInfoList = append(results.BackupInfoList, backupInfo)
@@ -112,6 +113,5 @@ func ResetResult(settings *Settings, results *Results) {
 	results.ContainerDescription = settings.ContainerDescription
 	results.UptimeList = []UptimeResponse{}
 	results.LoglineList = []LogLine{}
-	results.SysMonitorInfoList = []SysMonitorInfo{}
 	results.BackupInfoList = []BackupInfo{}
 }

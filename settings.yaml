@@ -6,6 +6,17 @@ container-support: mark@hng.tech
 container-description: "For user authentication"
 data-file: "./lorona.dat"
 
+alerts:
+  email-handler: https://mail.lorona.io/
+  emails: 
+    - mark@hng.tech
+    - simon@hng.tech
+
+  slack:
+    token: YC4YN8LRJ8RkEL
+    key: YC4YN8LRJ8RkEL
+    url: https://api.slack.com/notify
+
 # This is an automatically created page that will aggregate all your containers together. You can easily
 # view errors, logs, downtime, server ability, etc
 push_metrics:
@@ -93,14 +104,5 @@ backups-monitor:
     check-backups-frequency: daily # This will only check daily for now
     check-backups-time: "19:18"
 
-alerts:
-  handler: https://mail.lorona.io/
-  emails: 
-    - mark@hng.tech
-    - simon@hng.tech
 
-  slack:
-    token: YC4YN8LRJ8RkEL
-    key: YC4YN8LRJ8RkEL
-    url: https://api.slack.com/notify
-# Is process observation needed?
+
