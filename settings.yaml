@@ -97,7 +97,8 @@ system:
     repeat-alert: daily
 
 backups-monitor:
-  - backup-folder: c:/backups/1
+  - backup-name: "MySQL"
+    backup-folder: c:/backups/1
     backup-minimum-file-size: 30M
     remote-backup-format: s3
     remote-backup-url: s2

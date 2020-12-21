@@ -59,7 +59,8 @@ func process(settings *Settings) {
 	StartSystemMonitoring(settings, sysinfos)
 
 	// Monitor backups
-	// StartBackupsMonitoring(settings, backups)
+	StartBackupsMonitoring(settings, backups)
+
 	go PromPublish()
 
 	// Watch for messages from the channels and add them to the results structure
@@ -79,10 +80,12 @@ func process(settings *Settings) {
 
 			fmt.Printf("Time: %s Error Level: %s Description: %s\n", logline.TimeStamp, logline.ErrorLevel, description)
 			results.LoglineList = append(results.LoglineList, logline)
+			UpdateMetrics(&results)
 		case uptime := <-uptimes:
 
 			// Add this new uptime result to the list
 			results.UptimeList = append(results.UptimeList, uptime)
+			UpdateMetrics(&results)
 
 		case sysinfo := <-sysinfos:
 			results.SysMonitorInfo = sysinfo
@@ -90,6 +93,7 @@ func process(settings *Settings) {
 
 		case backupInfo := <-backups:
 			results.BackupInfoList = append(results.BackupInfoList, backupInfo)
+			UpdateMetrics(&results)
 
 		case <-time.After(time.Second * 5): // does this do what we think it does? Check.
 		default:

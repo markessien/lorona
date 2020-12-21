@@ -20,10 +20,11 @@ var tickRepeatFrequency time.Duration
 // The UptimeResponse structure is used to record the results
 // from a single uptime query
 type BackupInfo struct {
-	Folder      string
-	LastBackup  time.Time
-	WasBackedUp bool
-	Message     string
+	Folder         string
+	LastBackup     time.Time
+	WasBackedUp    bool
+	Message        string
+	BackupFileSize uint64
 }
 
 type BackupMonitorRequest struct {
@@ -76,7 +77,13 @@ func StartBackupsMonitoring(settings *Settings, backups chan BackupInfo) error {
 
 		if err == nil {
 			if len(settings.BackupMonitorRequest) > 0 {
-				f := startBackupMonitoring(backupMonitorRequest.Folder, backups)
+				f := startBackupMonitoring(backupMonitorRequest.Folder, backups, true)
+
+				// Run one check now
+				firstCheck, _ := time.ParseDuration("3s")
+				time.AfterFunc(firstCheck, f)
+
+				f = startBackupMonitoring(backupMonitorRequest.Folder, backups, false)
 
 				// Let's shift each loop by 5seconds so the checks do not all run exactly in parallel
 				s := strconv.Itoa(i*5) + "s"
@@ -91,17 +98,19 @@ func StartBackupsMonitoring(settings *Settings, backups chan BackupInfo) error {
 	return nil
 }
 
-func startBackupMonitoring(backupFolder string, backups chan BackupInfo) func() {
+func startBackupMonitoring(backupFolder string, backups chan BackupInfo, first bool) func() {
 	return func() {
-		checkForBackups(backupFolder, backups)
+		checkForBackups(backupFolder, backups, first)
 	}
 }
 
-func checkForBackups(backupFolder string, backups chan BackupInfo) {
+func checkForBackups(backupFolder string, backups chan BackupInfo, first bool) {
 
 	// Let's create the next tick first of all
-	f := startBackupMonitoring(backupFolder, backups)
-	_ = time.AfterFunc(tickRepeatFrequency, f)
+	if !first {
+		f := startBackupMonitoring(backupFolder, backups, false)
+		_ = time.AfterFunc(tickRepeatFrequency, f)
+	}
 	// ---
 
 	var backupInfo BackupInfo
