@@ -72,7 +72,7 @@ func monitorEndpoint(endpointUrl string, interval time.Duration, uptimes chan Up
 		if err != nil {
 			// We use code 598 for an error like 'host not found'
 			uptime.ResponseCode = 598
-			uptime.ResponseTime = 0
+			uptime.ResponseTime = elapsed
 			uptime.ResponseValue = err.Error()
 		} else {
 			uptime.ResponseCode = response.StatusCode

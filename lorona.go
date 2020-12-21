@@ -49,7 +49,7 @@ func process(settings *Settings) {
 	// Start all the monitoring services
 
 	// Monitor specified endpoints to make sure they are up and running
-	// StartEndpointMonitoring(settings, uptimes)
+	StartEndpointMonitoring(settings, uptimes)
 
 	// Monitor the specified log files and send the log lines to this thread
 	// for further processing
