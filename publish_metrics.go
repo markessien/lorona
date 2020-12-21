@@ -25,6 +25,29 @@ var endpointDuration = promauto.NewGaugeVec(prometheus.GaugeOpts{Name: "lorona_e
 var backupsDone = promauto.NewGaugeVec(prometheus.GaugeOpts{Name: "lorona_backup_done", Help: "1 or 0, depending on if a backup was done or not"}, []string{"directory"})
 var backupsSize = promauto.NewGaugeVec(prometheus.GaugeOpts{Name: "lorona_backupsize", Help: "The size of the backup file"}, []string{"directory"})
 
+// Logs monitoring
+// https://lincolnloop.com/blog/tracking-application-response-time-nginx/
+// - A graph showing each type of logline, stacked. E.g 200, 404 and so on
+// We have a loglines which are all categorized
+// - A graph of only Error 500
+// - A graph of slow queries
+// - A graph of avg upstream response time over tick interval
+// - A graph of response time over tick interval
+
+// Visualisation would ideally be like this: https://prometheus.io/docs/visualization/grafana/
+
+// We return the number of errors since the last tick. Each lorona tick (of the log) provides a fixed number
+// of log entries. These remain the values till the next tick. Every prometheus query will return this.
+
+// Error 500 over what time?
+// metrics: lorona_status_5xx (count)
+// metrics: lorona_status_4xx
+// metrics: lorona_status_2xx
+// metrics: lorona_status_3xx
+// metrics: lorona_status_other
+// metrics: lorona_log_errors
+// metrics: lorona_log_warnings
+
 // To be called by mainthread anytime there is something new to
 // share with prometheus
 func UpdateMetrics(result *Results) {
@@ -59,8 +82,33 @@ func UpdateMetrics(result *Results) {
 		}
 
 		backupsSize.WithLabelValues(backupInfo.Folder).Set(float64(backupInfo.BackupFileSize))
+	}
+
+	var too_many_lines = 500
+	for _, logLine := range result.LoglineList {
+
+		summary, ok := result.LogSummary[logLine.LogPath]
+
+		if ok == false {
+			summary = LogSummary{}
+			summary.StatusCount = make(map[string]int64)
+			summary.ErrorLevelCount = make(map[string]int64)
+		}
+
+		summary.StatusCount[logLine.StatusCode] = summary.StatusCount[logLine.StatusCode] + 1
+		summary.ErrorLevelCount[logLine.ErrorLevel] = summary.ErrorLevelCount[logLine.ErrorLevel] + 1
+
+		result.LogSummary[logLine.LogPath] = summary
+
+		if too_many_lines <= 0 {
+			// Pending a better solution, let's not allow the processing
+			// of too many lines, to not kill the server
+			print("Too many lines for a single tick to process")
+			break
+		}
 
 	}
+
 }
 
 func PromPublish() {

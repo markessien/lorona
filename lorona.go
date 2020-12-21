@@ -18,6 +18,7 @@ type Results struct {
 	UptimeList           []UptimeResponse
 	LoglineList          []LogLine
 	BackupInfoList       []BackupInfo
+	LogSummary           map[string]LogSummary
 }
 
 func main() {
@@ -49,17 +50,17 @@ func process(settings *Settings) {
 	// Start all the monitoring services
 
 	// Monitor specified endpoints to make sure they are up and running
-	StartEndpointMonitoring(settings, uptimes)
+	// StartEndpointMonitoring(settings, uptimes)
 
 	// Monitor the specified log files and send the log lines to this thread
 	// for further processing
-	// StartLogMonitoring(settings, loglines)
+	StartLogMonitoring(settings, loglines)
 
 	// Monitor the system - CPU, Ram and Diskspace on specified directories
-	StartSystemMonitoring(settings, sysinfos)
+	// StartSystemMonitoring(settings, sysinfos)
 
 	// Monitor backups
-	StartBackupsMonitoring(settings, backups)
+	// StartBackupsMonitoring(settings, backups)
 
 	go PromPublish()
 
@@ -85,7 +86,7 @@ func process(settings *Settings) {
 
 			// Add this new uptime result to the list
 			results.UptimeList = append(results.UptimeList, uptime)
-			UpdateMetrics(&results)
+			// UpdateMetrics(&results)
 
 		case sysinfo := <-sysinfos:
 			results.SysMonitorInfo = sysinfo
@@ -93,7 +94,7 @@ func process(settings *Settings) {
 
 		case backupInfo := <-backups:
 			results.BackupInfoList = append(results.BackupInfoList, backupInfo)
-			UpdateMetrics(&results)
+			// UpdateMetrics(&results)
 
 		case <-time.After(time.Second * 5): // does this do what we think it does? Check.
 		default:
@@ -118,4 +119,5 @@ func ResetResult(settings *Settings, results *Results) {
 	results.UptimeList = []UptimeResponse{}
 	results.LoglineList = []LogLine{}
 	results.BackupInfoList = []BackupInfo{}
+	results.LogSummary = make(map[string]LogSummary)
 }

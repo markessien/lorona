@@ -13,6 +13,11 @@ import (
 	"github.com/araddon/dateparse"
 )
 
+type LogSummary struct {
+	StatusCount     map[string]int64
+	ErrorLevelCount map[string]int64
+}
+
 // A single line within a logfile
 type LogLine struct {
 	AppName         string
@@ -26,8 +31,13 @@ type LogLine struct {
 	StatusCode      string
 	UserAgent       string
 	ResponseSize    int64
+	ResponseTime    uint64
 	Referrer        string
 	Upstream        string
+	ExtraInfo1      string // Store any other date you want here
+	ExtraInfo2      string // Store any other date you want here
+	ExtraInfo3      string // Store any other date you want here
+
 }
 
 // Represents a log file, e.g nginx.log
