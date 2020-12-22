@@ -79,7 +79,7 @@ func process(settings *Settings) {
 				logline.Description = logline.Description[0:20]
 			}
 
-			fmt.Printf("Time: %s Error Level: %s Description: %s\n", logline.TimeStamp, logline.ErrorLevel, description)
+			fmt.Printf("Time: %s Error Level: %s Description: %s\n", logline.TimeStamp, logline.Severity, description)
 			results.LoglineList = append(results.LoglineList, logline)
 			UpdateMetrics(&results)
 		case uptime := <-uptimes:

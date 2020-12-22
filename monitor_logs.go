@@ -14,30 +14,37 @@ import (
 )
 
 type LogSummary struct {
-	StatusCount     map[string]int64
-	ErrorLevelCount map[string]int64
+	StatusCount        map[string]int64
+	SeverityLevelCount map[string]int64
 }
 
 // A single line within a logfile
 type LogLine struct {
-	AppName         string
-	LogPath         string
-	Description     string
-	ErrorLevel      string
-	TimeStamp       string
-	ParsedtimeStamp time.Time
-	SourceIP        string
-	Request         string
-	StatusCode      string
-	UserAgent       string
-	ResponseSize    int64
-	ResponseTime    uint64
-	Referrer        string
-	Upstream        string
-	ExtraInfo1      string // Store any other date you want here
-	ExtraInfo2      string // Store any other date you want here
-	ExtraInfo3      string // Store any other date you want here
+	// Basics
+	AppName string
+	LogPath string
 
+	// Natively supported log entry types
+	// These are also auto exposed
+	Description     string
+	Severity        string
+	TimeStampString string
+	TimeStamp       time.Time
+	StatusCode      string
+	ExecutionTime   uint64
+
+	// All other log items have to be parsed
+	// via regex.
+	/*
+		SourceIP        string
+		Request         string
+		UserAgent       string
+		ResponseSize    int64
+		Referrer        string
+		Upstream        string
+	*/
+
+	Fields map[string]interface{}
 }
 
 // Represents a log file, e.g nginx.log
@@ -169,6 +176,7 @@ func monitorLog(logFile LogFile, loglines chan LogLine) {
 
 		// Structure where we will save the line
 		var logline LogLine
+		logline.Fields = make(map[string]interface{})
 
 		// Get some info from the file itself
 		logline.LogPath = logFile.Filepath
@@ -190,55 +198,46 @@ func monitorLog(logFile LogFile, loglines chan LogLine) {
 
 		// Get each value
 		for i, name := range expression.SubexpNames() {
-			if name == "errorlevel" {
-				logline.ErrorLevel = match[i]
-				// Comment A: Storing the value of each field in this map. It will be used for condition evaluation
-				condition_parameters["errorlevel"] = match[i]
+			if name == "severity" {
+				logline.Severity = match[i]
 			} else if name == "description" {
 				logline.Description = match[i]
-				condition_parameters["description"] = match[i]
 			} else if name == "timestamp" {
 
-				logline.TimeStamp = match[i]
+				logline.TimeStampString = match[i]
 
 				if len(logFile.TimeFormat) > 0 {
-					t, err := time.Parse(logFile.TimeFormat, logline.TimeStamp)
+					t, err := time.Parse(logFile.TimeFormat, logline.TimeStampString)
 					if err == nil {
-						logline.ParsedtimeStamp = t
+						logline.TimeStamp = t
 					}
 				} else {
 					// We try a freestyle timestamp parsing
-					t, err := dateparse.ParseAny(logline.TimeStamp)
+					t, err := dateparse.ParseAny(logline.TimeStampString)
 					if err == nil {
-						logline.ParsedtimeStamp = t
+						logline.TimeStamp = t
 					}
 				}
 
-				// See Comment A
-				condition_parameters["timestamp"] = match[i]
-				condition_parameters["time(timestamp)"] = logline.ParsedtimeStamp // time(timestamp) can be used in conditionals
+				condition_parameters["time_timestamp"] = logline.TimeStamp
 
-				// We will need to check if this log has already been read (earlier than 'lastread')
-				// If so, we continue. Use ignore_this_line
-
-			} else if name == "ipaddress" {
-				logline.SourceIP = match[i]
-				condition_parameters["ipaddress"] = match[i]
 			} else if name == "statuscode" {
 				logline.StatusCode = match[i]
-				condition_parameters["statuscode"] = match[i]
 				condition_parameters["int_statuscode"], _ = strconv.Atoi(match[i])
-			} else if name == "useragent" {
-				logline.UserAgent = match[i]
-				condition_parameters["useragent"] = match[i]
-			} else if name == "referrer" {
-				logline.Referrer = match[i]
-				condition_parameters["referrer"] = match[i]
-			} else if name == "bytessent" {
-				logline.ResponseSize, _ = strconv.ParseInt(match[i], 10, 64) // convert to a 64bit int in base 10
-				condition_parameters["bytessent"] = match[i]
-				condition_parameters["int_bytessent"] = logline.ResponseSize
+			} else if name == "executiontime" {
+				condition_parameters["int_executiontime"], _ = strconv.Atoi(match[i])
+			} else if len(name) > 0 {
+				// One of the non-default keys came. We put it in the map
+				logline.Fields[name] = match[i]
+
+				// We also put int, float and time versions
+				if intVal, err := strconv.ParseInt(match[i], 10, 64); err == nil {
+					logline.Fields["int_"+name] = intVal
+				}
+
 			}
+
+			condition_parameters[name] = match[i]
 		}
 
 		// We run the evaluator to figure out if we need to even add this line to the logs

@@ -57,8 +57,8 @@ logs:
     type: nginx-error-log2  # This has to correspond to a name in the log_formats file
     time-format: apache-timestamp
     capture-line-if: # If any of the below is true
-      - errorlevel == "warning" # This is the format: https://github.com/Knetic/govaluate. Anything that it parses works
-      - errorlevel == "error" THEN alert immediately
+      - severity == "warning" # This is the format: https://github.com/Knetic/govaluate. Anything that it parses works
+      - severity == "error" THEN alert immediately
 
   - name: nginx-access
     filepath: ./sample_logs/access.log

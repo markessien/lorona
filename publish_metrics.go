@@ -84,6 +84,7 @@ func UpdateMetrics(result *Results) {
 		backupsSize.WithLabelValues(backupInfo.Folder).Set(float64(backupInfo.BackupFileSize))
 	}
 
+	// TODO: This loop is not needed, you can build the summary on the first loop
 	var too_many_lines = 500
 	for _, logLine := range result.LoglineList {
 
@@ -92,11 +93,14 @@ func UpdateMetrics(result *Results) {
 		if ok == false {
 			summary = LogSummary{}
 			summary.StatusCount = make(map[string]int64)
-			summary.ErrorLevelCount = make(map[string]int64)
+			summary.SeverityLevelCount = make(map[string]int64)
 		}
 
 		summary.StatusCount[logLine.StatusCode] = summary.StatusCount[logLine.StatusCode] + 1
-		summary.ErrorLevelCount[logLine.ErrorLevel] = summary.ErrorLevelCount[logLine.ErrorLevel] + 1
+
+		if len(logLine.Severity) > 0 {
+			summary.SeverityLevelCount[logLine.Severity] = summary.SeverityLevelCount[logLine.Severity] + 1
+		}
 
 		result.LogSummary[logLine.LogPath] = summary
 
