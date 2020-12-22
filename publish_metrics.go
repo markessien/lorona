@@ -26,6 +26,10 @@ var backupsDone = promauto.NewGaugeVec(prometheus.GaugeOpts{Name: "lorona_backup
 var backupsSize = promauto.NewGaugeVec(prometheus.GaugeOpts{Name: "lorona_backupsize", Help: "The size of the backup file"}, []string{"directory"})
 
 // Logs monitoring
+var statusCodes = promauto.NewGaugeVec(prometheus.GaugeOpts{Name: "lorona_status_codes", Help: "A guage for each status_code, showing its count"}, []string{"log_path", "status_code"})
+var severity = promauto.NewGaugeVec(prometheus.GaugeOpts{Name: "lorona_severity", Help: "A gauge for each severity, showing its count"}, []string{"log_path", "severity"})
+
+// Logs monitoring
 // https://lincolnloop.com/blog/tracking-application-response-time-nginx/
 // - A graph showing each type of logline, stacked. E.g 200, 404 and so on
 // We have a loglines which are all categorized
@@ -113,6 +117,18 @@ func UpdateMetrics(result *Results) {
 
 	}
 
+	// Set the values for the logs. We use two labels (logpath, code)
+	for logFilePath, logSummary := range result.LogSummary {
+
+		for s, value := range logSummary.StatusCount {
+			statusCodes.WithLabelValues(logFilePath, s).Set(float64(value))
+		}
+
+		for s, value := range logSummary.SeverityLevelCount {
+			severity.WithLabelValues(logFilePath, s).Set(float64(value))
+		}
+
+	}
 }
 
 func PromPublish() {

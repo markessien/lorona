@@ -33,17 +33,6 @@ type LogLine struct {
 	StatusCode      string
 	ExecutionTime   uint64
 
-	// All other log items have to be parsed
-	// via regex.
-	/*
-		SourceIP        string
-		Request         string
-		UserAgent       string
-		ResponseSize    int64
-		Referrer        string
-		Upstream        string
-	*/
-
 	Fields map[string]interface{}
 }
 
