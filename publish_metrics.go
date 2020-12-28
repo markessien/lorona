@@ -1,7 +1,9 @@
 package main
 
 import (
+	"math"
 	"net/http"
+	"strconv"
 
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
@@ -15,7 +17,7 @@ import (
 var upTime = promauto.NewGauge(prometheus.GaugeOpts{Name: "lorona_system_uptime", Help: "The uptime of this machine"})
 var cpuUsage = promauto.NewGauge(prometheus.GaugeOpts{Name: "lorona_system_cpu_usage", Help: "The current CPU usage of this machine"})
 var loadAvg1 = promauto.NewGauge(prometheus.GaugeOpts{Name: "lorona_system_load_avg_1", Help: "1 Minute average system load"})
-var driveSpace = promauto.NewGaugeVec(prometheus.GaugeOpts{Name: "lorona_hd_available", Help: "The amount of space available in the hard drive"}, []string{"drive_paths"})
+var driveSpace = promauto.NewGaugeVec(prometheus.GaugeOpts{Name: "lorona_hd_available", Help: "The amount of space available in the hard drive"}, []string{"drive_path", "available", "growth_rate", "full_in", "physical_drive"})
 
 // Endpoint monitoring
 var endpointAvailable = promauto.NewGaugeVec(prometheus.GaugeOpts{Name: "lorona_endpoint_up", Help: "1 or 0, depending on if the endpoint is up or not"}, []string{"urls"})
@@ -28,6 +30,21 @@ var backupsSize = promauto.NewGaugeVec(prometheus.GaugeOpts{Name: "lorona_backup
 // Logs monitoring
 var statusCodes = promauto.NewGaugeVec(prometheus.GaugeOpts{Name: "lorona_status_codes", Help: "A guage for each status_code, showing its count"}, []string{"log_path", "status_code"})
 var severity = promauto.NewGaugeVec(prometheus.GaugeOpts{Name: "lorona_severity", Help: "A gauge for each severity, showing its count"}, []string{"log_path", "severity"})
+
+// Graphs to show
+// - show the system uptime as a single number
+// - Show the system cpu usage as a line graph
+// - Table showing all drives and their usage
+// ---
+// - Table with all endpoints, showing their up status
+// - Graph like the uptime robot one showing all the response times
+// ----
+// - Table showing if last backup was done
+// - Graph showing the size of the backup files daily
+// --
+// - Log window showing all the logs
+// - Stacked graph showing 200, 400
+// - Stack graph showing the number of errors in the logs
 
 // Logs monitoring
 // https://lincolnloop.com/blog/tracking-application-response-time-nginx/
@@ -62,7 +79,19 @@ func UpdateMetrics(result *Results) {
 	loadAvg1.Set(float64(result.SysMonitorInfo.LoadAveragePercent1))
 
 	for _, driveUsage := range result.SysMonitorInfo.DriveUsage {
-		driveSpace.WithLabelValues(driveUsage.Path).Set(driveUsage.PercentUsed)
+		// "drive_path", "available", "growth_rate", "full_in", "physical_drive"
+
+		days := strconv.FormatFloat(driveUsage.DaysTillFull, 'f', 3, 64)
+
+		if math.IsInf(driveUsage.DaysTillFull, 0) {
+			days = "10 years"
+		}
+
+		driveSpace.WithLabelValues(driveUsage.Path,
+			strconv.FormatFloat(driveUsage.PercentUsed, 'f', 3, 64),
+			strconv.FormatUint(driveUsage.GrowthPerDayBytes, 10),
+			days,
+			driveUsage.VolumeName).Set(driveUsage.PercentUsed)
 	}
 
 	// Publish endpoints being monitored

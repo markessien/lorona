@@ -1,6 +1,8 @@
 package main
 
 import (
+	"math"
+	"path/filepath"
 	"time"
 
 	"github.com/shirou/gopsutil/load"
@@ -9,16 +11,25 @@ import (
 	"github.com/shirou/gopsutil/v3/host"
 )
 
+// TODO: Add hd growth rate
+// TODO: Add projected days till HD full
+// TODO: Add physical drive name
+
 // Used to stop the monitoring threads neatly
 var stopSystemMonitoring bool
 
 // A structure for providing info about the usage of a single drive
 type SysDriveInfo struct {
-	Path        string
-	PercentUsed float64
-	Capacity    uint64
-	Used        uint64
-	Fstype      string
+	Path               string
+	PercentUsed        float64
+	Capacity           uint64
+	Used               uint64
+	Fstype             string
+	VolumeName         string
+	DaysTillFull       float64
+	GrowthPerDayBytes  uint64
+	UsedCheckpoint     uint64 // Used to measure growth rate
+	UsedCheckpointTime time.Time
 }
 
 // The structure that saves all the information about the
@@ -30,8 +41,8 @@ type SysMonitorInfo struct {
 	LoadAveragePercent1  float64
 	LoadAveragePercent5  float64
 	LoadAveragePercent15 float64
-	Uptime               uint64
-	DriveUsage           []SysDriveInfo
+	Uptime               uint64 // In seconds
+	DriveUsage           map[string]*SysDriveInfo
 }
 
 // A structure that represents a single request for system
@@ -74,6 +85,7 @@ func StopSystemMonitoring() {
 func monitorSystem(request SystemMonitorRequest, interval time.Duration, sysinfos chan SysMonitorInfo) {
 
 	sys := SysMonitorInfo{}
+	sys.DriveUsage = make(map[string]*SysDriveInfo)
 
 	// Get Hostname
 	// HostID: https://godoc.org/github.com/shirou/gopsutil/host#HostID
@@ -96,15 +108,51 @@ func monitorSystem(request SystemMonitorRequest, interval time.Duration, sysinfo
 		// Loop over all the requests to monitor drives
 		for _, drivePath := range request.DriveSpace.Locations {
 
-			var driveInfoResponse SysDriveInfo
+			// var driveInfoResponse SysDriveInfo
 			stat, err := disk.Usage(drivePath)
 			if err == nil {
-				driveInfoResponse.Path = stat.Path
-				driveInfoResponse.Fstype = stat.Fstype
-				driveInfoResponse.Used = stat.Used
-				driveInfoResponse.Capacity = stat.Total
-				driveInfoResponse.PercentUsed = stat.UsedPercent
-				sys.DriveUsage = append(sys.DriveUsage, driveInfoResponse)
+
+				_, ok := sys.DriveUsage[drivePath]
+				if !ok {
+					sys.DriveUsage[drivePath] = new(SysDriveInfo)
+					sys.DriveUsage[drivePath].UsedCheckpointTime = time.Now()
+					sys.DriveUsage[drivePath].UsedCheckpoint = stat.Used
+				}
+
+				sys.DriveUsage[drivePath].Path = stat.Path
+				sys.DriveUsage[drivePath].Fstype = stat.Fstype
+				sys.DriveUsage[drivePath].Used = stat.Used
+				sys.DriveUsage[drivePath].Capacity = stat.Total
+				sys.DriveUsage[drivePath].PercentUsed = stat.UsedPercent
+				sys.DriveUsage[drivePath].VolumeName = filepath.VolumeName(drivePath)
+
+				// The below figures out how fast the disk is filling up, and estimates
+				// by when the disk will be full based on this growth rate
+
+				measurementInterval := 0.006
+				timeInterval := time.Now().Sub(sys.DriveUsage[drivePath].UsedCheckpointTime).Hours()
+				if timeInterval > measurementInterval {
+
+					spaceAddedBytes := sys.DriveUsage[drivePath].Used - sys.DriveUsage[drivePath].UsedCheckpoint
+					// spacedAddedPerInterval := float64(spaceAddedBytes) / timeInterval
+
+					intervalsInDay := 24 / timeInterval
+
+					sys.DriveUsage[drivePath].GrowthPerDayBytes = uint64(math.Round(intervalsInDay * float64(spaceAddedBytes)))
+
+					availableSpace := sys.DriveUsage[drivePath].Capacity - sys.DriveUsage[drivePath].Used
+					sys.DriveUsage[drivePath].DaysTillFull = float64(availableSpace) / float64(sys.DriveUsage[drivePath].GrowthPerDayBytes)
+
+					sys.DriveUsage[drivePath].UsedCheckpoint = sys.DriveUsage[drivePath].Used
+					sys.DriveUsage[drivePath].UsedCheckpointTime = time.Now()
+
+				}
+			} else {
+				// Reset the drive usage, so it does not infinitely grow
+				sys.DriveUsage[drivePath].Fstype = stat.Fstype
+				sys.DriveUsage[drivePath].Used = 0
+				sys.DriveUsage[drivePath].Capacity = 0
+				sys.DriveUsage[drivePath].PercentUsed = 0
 			}
 
 		}
@@ -112,8 +160,6 @@ func monitorSystem(request SystemMonitorRequest, interval time.Duration, sysinfo
 		// Push results to the main thread thorugh a channel
 		sysinfos <- sys
 
-		// Reset the drive usage, so it does not infinitely grow
-		sys.DriveUsage = []SysDriveInfo{}
 		time.Sleep(interval)
 	}
 
