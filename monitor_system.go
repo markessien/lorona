@@ -129,7 +129,7 @@ func monitorSystem(request SystemMonitorRequest, interval time.Duration, sysinfo
 				// The below figures out how fast the disk is filling up, and estimates
 				// by when the disk will be full based on this growth rate
 
-				measurementInterval := 0.006
+				measurementInterval := 1.0
 				timeInterval := time.Now().Sub(sys.DriveUsage[drivePath].UsedCheckpointTime).Hours()
 				if timeInterval > measurementInterval {
 
