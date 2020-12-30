@@ -37,6 +37,8 @@ type SysDriveInfo struct {
 type SysMonitorInfo struct {
 	HostName             string
 	CpuUsagePercent      float64
+	MemUsagePercent      float64
+	BandwidthUsage       uint64
 	SystemWarnings       []string // Can we get this?
 	LoadAveragePercent1  float64
 	LoadAveragePercent5  float64
