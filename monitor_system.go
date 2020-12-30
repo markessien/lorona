@@ -5,18 +5,22 @@ import (
 	"path/filepath"
 	"time"
 
-	"github.com/shirou/gopsutil/load"
+	"github.com/shirou/gopsutil/mem"
+	"github.com/shirou/gopsutil/net"
 	"github.com/shirou/gopsutil/v3/cpu"
 	"github.com/shirou/gopsutil/v3/disk"
 	"github.com/shirou/gopsutil/v3/host"
 )
 
-// TODO: Add hd growth rate
-// TODO: Add projected days till HD full
 // TODO: Add physical drive name
 
 // Used to stop the monitoring threads neatly
 var stopSystemMonitoring bool
+
+// For measuring bandwidth
+var lastNetworkBytesSent uint64
+var lastNetworkBytesRecv uint64
+var lastNetworkTimeStamp time.Time
 
 // A structure for providing info about the usage of a single drive
 type SysDriveInfo struct {
@@ -35,16 +39,17 @@ type SysDriveInfo struct {
 // The structure that saves all the information about the
 // system that we want to provide
 type SysMonitorInfo struct {
-	HostName             string
-	CpuUsagePercent      float64
-	MemUsagePercent      float64
-	BandwidthUsage       uint64
-	SystemWarnings       []string // Can we get this?
-	LoadAveragePercent1  float64
-	LoadAveragePercent5  float64
-	LoadAveragePercent15 float64
-	Uptime               uint64 // In seconds
-	DriveUsage           map[string]*SysDriveInfo
+	HostName            string
+	CpuUsagePercent     float64
+	MemUsagePercent     float64
+	MemTotal            uint64
+	MemAvailable        uint64
+	BandwidthUsageTotal uint64
+	BandwidthUsageSent  uint64
+	BandwidthUsageRecv  uint64
+	SystemWarnings      []string // Can we get this?
+	Uptime              uint64   // In seconds
+	DriveUsage          map[string]*SysDriveInfo
 }
 
 // A structure that represents a single request for system
@@ -67,6 +72,13 @@ type SystemMonitorRequest struct {
 func StartSystemMonitoring(settings *Settings, sysinfos chan SysMonitorInfo) error {
 
 	stopSystemMonitoring = false
+
+	netw, _ := net.IOCounters(false) // for all networks aggregated (false)
+	netw_all := netw[0]
+
+	lastNetworkBytesSent = netw_all.BytesSent
+	lastNetworkBytesRecv = netw_all.BytesRecv
+	lastNetworkTimeStamp = time.Now()
 
 	duration, err := time.ParseDuration(settings.SysMonitorRequest.CheckInterval)
 	if err != nil {
@@ -101,11 +113,28 @@ func monitorSystem(request SystemMonitorRequest, interval time.Duration, sysinfo
 		cpus, _ := cpu.Percent(0, false)
 		sys.CpuUsagePercent = cpus[0]
 
-		// Get the average CPU load
-		avg, _ := load.Avg()
-		sys.LoadAveragePercent1 = avg.Load1
-		sys.LoadAveragePercent5 = avg.Load5
-		sys.LoadAveragePercent15 = avg.Load15
+		memory, _ := mem.VirtualMemory()
+		sys.MemUsagePercent = memory.UsedPercent
+		sys.MemTotal = memory.Total
+		sys.MemAvailable = memory.Available
+
+		netw, _ := net.IOCounters(false) // for all networks aggregated (false)
+		netw_all := netw[0]
+
+		curNetworkBytesSent := netw_all.BytesSent
+		curNetworkBytesRecv := netw_all.BytesRecv
+
+		timeElapsed := time.Now().Sub(lastNetworkTimeStamp)
+
+		if timeElapsed.Seconds() > 0 {
+			sys.BandwidthUsageSent = uint64(float64(curNetworkBytesSent-lastNetworkBytesSent) / timeElapsed.Seconds())
+			sys.BandwidthUsageRecv = uint64(float64(curNetworkBytesRecv-lastNetworkBytesRecv) / timeElapsed.Seconds())
+			sys.BandwidthUsageTotal = sys.BandwidthUsageSent + sys.BandwidthUsageRecv
+
+			lastNetworkBytesSent = netw_all.BytesSent
+			lastNetworkBytesRecv = netw_all.BytesRecv
+			lastNetworkTimeStamp = time.Now()
+		}
 
 		// Loop over all the requests to monitor drives
 		for _, drivePath := range request.DriveSpace.Locations {
@@ -136,8 +165,6 @@ func monitorSystem(request SystemMonitorRequest, interval time.Duration, sysinfo
 				if timeInterval > measurementInterval {
 
 					spaceAddedBytes := sys.DriveUsage[drivePath].Used - sys.DriveUsage[drivePath].UsedCheckpoint
-					// spacedAddedPerInterval := float64(spaceAddedBytes) / timeInterval
-
 					intervalsInDay := 24 / timeInterval
 
 					sys.DriveUsage[drivePath].GrowthPerDayBytes = uint64(math.Round(intervalsInDay * float64(spaceAddedBytes)))

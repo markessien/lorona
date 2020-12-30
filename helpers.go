@@ -1,9 +1,10 @@
 package main
 
 import (
+	"time"
+
 	"fmt"
 	"strconv"
-	"time"
 )
 
 func btof(b bool) float64 {

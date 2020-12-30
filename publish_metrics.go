@@ -10,13 +10,21 @@ import (
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 )
 
-// Docs: https://godoc.org/github.com/prometheus/client_golang/prometheus#example-CounterVec
-// Metric types: Counter (increases), Gauge (fluctuates), Histogram (Bucket Values), Summary
-
 // System
-var upTime = promauto.NewGauge(prometheus.GaugeOpts{Name: "lorona_system_uptime", Help: "The uptime of this machine"})
-var cpuUsage = promauto.NewGauge(prometheus.GaugeOpts{Name: "lorona_system_cpu_usage", Help: "The current CPU usage of this machine"})
-var loadAvg1 = promauto.NewGauge(prometheus.GaugeOpts{Name: "lorona_system_load_avg_1", Help: "1 Minute average system load"})
+var upTimeGauge = promauto.NewGauge(prometheus.GaugeOpts{Name: "lorona_system_uptime", Help: "The uptime of this machine"})
+var cpuUsageGauge = promauto.NewGauge(prometheus.GaugeOpts{Name: "lorona_system_cpu_usage", Help: "The current CPU usage of this machine"})
+
+// Memory
+var memUsagePercentGauge = promauto.NewGauge(prometheus.GaugeOpts{Name: "lorona_mem_usage_percent", Help: "The current CPU usage of this machine"})
+var memTotalGauge = promauto.NewGauge(prometheus.GaugeOpts{Name: "lorona_mem_total", Help: "The current CPU usage of this machine"})
+var memAvailableGauge = promauto.NewGauge(prometheus.GaugeOpts{Name: "lorona_mem_available", Help: "The current CPU usage of this machine"})
+
+// Bandwidth
+var bandwidthUsageTotalGauge = promauto.NewGauge(prometheus.GaugeOpts{Name: "lorona_bandwidth_usage", Help: "The current CPU usage of this machine"})
+var bandwidthUsageSentGauge = promauto.NewGauge(prometheus.GaugeOpts{Name: "lorona_bandwidth_sent_usage", Help: "The current CPU usage of this machine"})
+var bandwidthUsageRecvGauge = promauto.NewGauge(prometheus.GaugeOpts{Name: "lorona_bandwith_recv_usage", Help: "The current CPU usage of this machine"})
+
+// Hard drive space
 var driveSpace = promauto.NewGaugeVec(prometheus.GaugeOpts{Name: "lorona_hd_available", Help: "The amount of space available in the hard drive"}, []string{"drive_path", "available", "growth_rate", "full_in", "physical_drive"})
 
 // Endpoint monitoring
@@ -35,9 +43,18 @@ var severity = promauto.NewGaugeVec(prometheus.GaugeOpts{Name: "lorona_severity"
 func UpdateMetrics(result *Results) {
 
 	// Publish system variables
-	upTime.Set(float64(result.SysMonitorInfo.Uptime))
-	cpuUsage.Set(float64(result.SysMonitorInfo.CpuUsagePercent))
-	loadAvg1.Set(float64(result.SysMonitorInfo.LoadAveragePercent1))
+	upTimeGauge.Set(float64(result.SysMonitorInfo.Uptime))
+	cpuUsageGauge.Set(float64(result.SysMonitorInfo.CpuUsagePercent))
+
+	// Memory
+	memUsagePercentGauge.Set(result.SysMonitorInfo.MemUsagePercent)
+	memTotalGauge.Set(float64(result.SysMonitorInfo.MemTotal))
+	memAvailableGauge.Set(float64(result.SysMonitorInfo.MemAvailable))
+
+	// Bandwidth
+	bandwidthUsageTotalGauge.Set(float64(result.SysMonitorInfo.BandwidthUsageTotal))
+	bandwidthUsageSentGauge.Set(float64(result.SysMonitorInfo.BandwidthUsageSent))
+	bandwidthUsageRecvGauge.Set(float64(result.SysMonitorInfo.BandwidthUsageRecv))
 
 	for _, driveUsage := range result.SysMonitorInfo.DriveUsage {
 		// "drive_path", "available", "growth_rate", "full_in", "physical_drive"
