@@ -122,11 +122,6 @@ func LoadLogFileRegex() (error, map[string]string) {
 	return nil, regexes
 }
 
-// Print ersatz
-func print(str string) {
-	fmt.Println(str)
-}
-
 // Loads the last settings file. We need it for some stuff
 // like info about the log files
 func LoadData(settings *Settings) error {

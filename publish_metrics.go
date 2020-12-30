@@ -24,50 +24,11 @@ var endpointAvailable = promauto.NewGaugeVec(prometheus.GaugeOpts{Name: "lorona_
 var endpointDuration = promauto.NewGaugeVec(prometheus.GaugeOpts{Name: "lorona_endpoint_duration", Help: "Informs how long it took for the endpoint to respond"}, []string{"urls"})
 
 // Backups monitoring
-var backupsDone = promauto.NewGaugeVec(prometheus.GaugeOpts{Name: "lorona_backup_done", Help: "1 or 0, depending on if a backup was done or not"}, []string{"directory"})
-var backupsSize = promauto.NewGaugeVec(prometheus.GaugeOpts{Name: "lorona_backupsize", Help: "The size of the backup file"}, []string{"directory"})
+var backupInfoGauge = promauto.NewGaugeVec(prometheus.GaugeOpts{Name: "lorona_backup_info", Help: "1 or 0, depending on if a backup was done or not"}, []string{"backup_directory", "backup_in_last_24_hours", "last_backup_size", "last_backup_time", "last_backup_file"})
 
 // Logs monitoring
 var statusCodes = promauto.NewGaugeVec(prometheus.GaugeOpts{Name: "lorona_status_codes", Help: "A guage for each status_code, showing its count"}, []string{"log_path", "status_code"})
 var severity = promauto.NewGaugeVec(prometheus.GaugeOpts{Name: "lorona_severity", Help: "A gauge for each severity, showing its count"}, []string{"log_path", "severity"})
-
-// Graphs to show
-// - show the system uptime as a single number
-// - Show the system cpu usage as a line graph
-// - Table showing all drives and their usage
-// ---
-// - Table with all endpoints, showing their up status
-// - Graph like the uptime robot one showing all the response times
-// ----
-// - Table showing if last backup was done
-// - Graph showing the size of the backup files daily
-// --
-// - Log window showing all the logs
-// - Stacked graph showing 200, 400
-// - Stack graph showing the number of errors in the logs
-
-// Logs monitoring
-// https://lincolnloop.com/blog/tracking-application-response-time-nginx/
-// - A graph showing each type of logline, stacked. E.g 200, 404 and so on
-// We have a loglines which are all categorized
-// - A graph of only Error 500
-// - A graph of slow queries
-// - A graph of avg upstream response time over tick interval
-// - A graph of response time over tick interval
-
-// Visualisation would ideally be like this: https://prometheus.io/docs/visualization/grafana/
-
-// We return the number of errors since the last tick. Each lorona tick (of the log) provides a fixed number
-// of log entries. These remain the values till the next tick. Every prometheus query will return this.
-
-// Error 500 over what time?
-// metrics: lorona_status_5xx (count)
-// metrics: lorona_status_4xx
-// metrics: lorona_status_2xx
-// metrics: lorona_status_3xx
-// metrics: lorona_status_other
-// metrics: lorona_log_errors
-// metrics: lorona_log_warnings
 
 // To be called by mainthread anytime there is something new to
 // share with prometheus
@@ -108,13 +69,23 @@ func UpdateMetrics(result *Results) {
 
 	for _, backupInfo := range result.BackupInfoList {
 
-		if backupInfo.WasBackedUp {
-			backupsDone.WithLabelValues(backupInfo.Folder).Set(1)
-		} else {
-			backupsDone.WithLabelValues(backupInfo.Folder).Set(0)
-		}
+		/*
+			if backupInfo.WasBackedUp {
+				backupsDone.WithLabelValues(backupInfo.Folder).Set(1)
+			} else {
+				backupsDone.WithLabelValues(backupInfo.Folder).Set(0)
+			}
+		*/
 
-		backupsSize.WithLabelValues(backupInfo.Folder).Set(float64(backupInfo.BackupFileSize))
+		// {"backup_directory", "backup_in_last_24_hours", "last_backup_size", "last_backup_date", "last_backup_time"})
+
+		// backupsSize.WithLabelValues(backupInfo.Folder).Set(float64(backupInfo.BackupFileSize))
+
+		backupInfoGauge.WithLabelValues(backupInfo.Folder,
+			btoa(backupInfo.WasBackedUp),
+			itoa(backupInfo.LastBackupSize),
+			ttoa(backupInfo.LastBackupTime),
+			backupInfo.LastBackupFile).Set(btof(backupInfo.WasBackedUp))
 	}
 
 	// TODO: This loop is not needed, you can build the summary on the first loop

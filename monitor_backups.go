@@ -21,10 +21,11 @@ var tickRepeatFrequency time.Duration
 // from a single uptime query
 type BackupInfo struct {
 	Folder         string
-	LastBackup     time.Time
+	LastBackupTime time.Time
 	WasBackedUp    bool
 	Message        string
-	BackupFileSize uint64
+	LastBackupSize int64
+	LastBackupFile string
 }
 
 type BackupMonitorRequest struct {
@@ -108,6 +109,8 @@ func checkForBackups(backupFolder string, backups chan BackupInfo, first bool) {
 
 	// Let's create the next tick first of all
 	if !first {
+		// when this call is first done, it is done without the time
+		// after that, it's called with timer turned on
 		f := startBackupMonitoring(backupFolder, backups, false)
 		_ = time.AfterFunc(tickRepeatFrequency, f)
 	}
@@ -116,7 +119,7 @@ func checkForBackups(backupFolder string, backups chan BackupInfo, first bool) {
 	var backupInfo BackupInfo
 	backupInfo.Folder = backupFolder
 	backupInfo.WasBackedUp = false
-	backupInfo.LastBackup = time.Date(1900, 0, 0, 0, 0, 0, 0, time.UTC)
+	backupInfo.LastBackupTime = time.Date(1900, 0, 0, 0, 0, 0, 0, time.UTC)
 
 	// Open the backup folder to list the files in it
 	files, err := ioutil.ReadDir(backupFolder)
@@ -152,6 +155,12 @@ func checkForBackups(backupFolder string, backups chan BackupInfo, first bool) {
 			if _, found := knownBackupFiles[fullPath]; found {
 				// In a previous tick, we found this file already.
 				// That mean that it's not a new backup file
+
+				if fileStat.ModTime().After(backupInfo.LastBackupTime) {
+					backupInfo.LastBackupTime = fileStat.ModTime()
+					backupInfo.LastBackupSize = fileStat.Size()
+					backupInfo.LastBackupFile = fullPath
+				}
 				continue
 			}
 
@@ -159,7 +168,9 @@ func checkForBackups(backupFolder string, backups chan BackupInfo, first bool) {
 
 			backupInfo.Message = "A new backup file was found: " + fullPath
 			backupInfo.WasBackedUp = true
-			backupInfo.LastBackup = fileStat.ModTime()
+			backupInfo.LastBackupTime = fileStat.ModTime()
+			backupInfo.LastBackupSize = fileStat.Size()
+			backupInfo.LastBackupFile = fullPath
 
 			mutex.Lock()
 			knownBackupFiles[fullPath] = fileStat.Size()

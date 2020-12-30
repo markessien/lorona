@@ -87,6 +87,23 @@ system:
     locations:
       - c:/
       - d:/
+      - e:/
+      - f:/
+      - g:/
+      - k:/
+      - n:/
+      - o:/
+      - p:/
+      - q:/
+      - r:/
+      - s:/
+      - t:/
+      - u:/
+      - v:/
+      - w:/
+      - x:/
+      - y:/
+
 
   cpu:
     alert-level: 70%

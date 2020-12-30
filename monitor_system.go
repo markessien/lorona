@@ -149,10 +149,12 @@ func monitorSystem(request SystemMonitorRequest, interval time.Duration, sysinfo
 				}
 			} else {
 				// Reset the drive usage, so it does not infinitely grow
-				sys.DriveUsage[drivePath].Fstype = stat.Fstype
-				sys.DriveUsage[drivePath].Used = 0
-				sys.DriveUsage[drivePath].Capacity = 0
-				sys.DriveUsage[drivePath].PercentUsed = 0
+				if sys.DriveUsage[drivePath] != nil {
+					sys.DriveUsage[drivePath].Fstype = stat.Fstype
+					sys.DriveUsage[drivePath].Used = 0
+					sys.DriveUsage[drivePath].Capacity = 0
+					sys.DriveUsage[drivePath].PercentUsed = 0
+				}
 			}
 
 		}
