@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/json"
 	"flag"
+	"log"
 	"time"
 )
 
@@ -33,6 +34,7 @@ func main() {
 	// Configure logging
 	logConfig := LogConfig{true, true, true, *logFilePtr, "lorona.log", 1024 * 1024, 10, 60 * 60 * 24 * 30}
 	lLog = ConfigureLogging(logConfig)
+	log.SetOutput(lLog)
 
 	// Start!
 	lLog.Print("Welcome to Lorona!")
