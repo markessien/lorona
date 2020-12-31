@@ -4,8 +4,9 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
-	"log"
 	"time"
+
+	"github.com/rs/zerolog/log"
 )
 
 // This contains the result format that will be converted to json
@@ -24,14 +25,14 @@ type Results struct {
 
 // Let's get started!
 func main() {
-	fmt.Println("Welcome to Lorona!")
+	log.Print("Welcome to Lorona!")
 
 	settingsFilePtr := flag.String("settings", "settings.yaml", "Location of the settings file")
 	flag.Parse()
 
 	settings, err := LoadSettings(*settingsFilePtr)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatal().Err(err).Msg("Could not load settings file")
 	}
 
 	fmt.Println("Lorona for package: " + settings.ContainerName + ". Settings File is " + *settingsFilePtr)

@@ -28,7 +28,7 @@ Type=simple
 Restart=always
 RestartSec=1
 User=<your username>
-ExecStart=/<path to lorona>/lorona
+ExecStart=/<path to lorona>/lorona -settings=/<path to lorona>/settings.yaml
 
 [Install]
 WantedBy=multi-user.target
