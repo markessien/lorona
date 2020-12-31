@@ -22,16 +22,20 @@ type Results struct {
 	LogSummary           map[string]LogSummary
 }
 
-// Let's get started!
+// Let's go!
 func main() {
 
-	logConfig := LogConfig{true, true, true, "c:/logs", "lorona.log", 1024 * 1024, 10, 60 * 60 * 24 * 30}
+	// Get command line arguments
+	settingsFilePtr := flag.String("settings", "settings.yaml", "Location of the settings file")
+	logFilePtr := flag.String("log", "lorona.log", "Location of the log file")
+	flag.Parse()
+
+	// Configure logging
+	logConfig := LogConfig{true, true, true, *logFilePtr, "lorona.log", 1024 * 1024, 10, 60 * 60 * 24 * 30}
 	lLog = ConfigureLogging(logConfig)
 
+	// Start!
 	lLog.Print("Welcome to Lorona!")
-
-	settingsFilePtr := flag.String("settings", "settings.yaml", "Location of the settings file")
-	flag.Parse()
 
 	settings, err := LoadSettings(*settingsFilePtr)
 	if err != nil {
