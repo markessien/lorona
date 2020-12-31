@@ -128,7 +128,7 @@ func UpdateMetrics(result *Results) {
 		if too_many_lines <= 0 {
 			// Pending a better solution, let's not allow the processing
 			// of too many lines, to not kill the server
-			print("Too many lines for a single tick to process")
+			lLog.Print("Too many lines for a single tick to process")
 			break
 		}
 

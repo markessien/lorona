@@ -2,7 +2,6 @@ package main
 
 import (
 	"encoding/gob"
-	"fmt"
 	"io/ioutil"
 	"os"
 	"strconv"
@@ -74,7 +73,7 @@ func StartBackupsMonitoring(settings *Settings, backups chan BackupInfo) error {
 		timeTillStart := time.Until(startTick)
 		// timeTillStart = 1000 * 1000 * 3000
 		tickRepeatFrequency = timeTillStart
-		fmt.Println(timeTillStart)
+		lLog.Print(timeTillStart)
 
 		if err == nil {
 			if len(settings.BackupMonitorRequest) > 0 {
@@ -92,7 +91,7 @@ func StartBackupsMonitoring(settings *Settings, backups chan BackupInfo) error {
 				_ = time.AfterFunc(timeTillStart+shift, f)
 			}
 		} else {
-			print("Was not able to parse check time for " + backupMonitorRequest.Folder)
+			lLog.Print("Was not able to parse check time for " + backupMonitorRequest.Folder)
 		}
 	}
 
@@ -164,7 +163,7 @@ func checkForBackups(backupFolder string, backups chan BackupInfo, first bool) {
 				continue
 			}
 
-			print("Backup found")
+			lLog.Print("Backup found")
 
 			backupInfo.Message = "A new backup file was found: " + fullPath
 			backupInfo.WasBackedUp = true

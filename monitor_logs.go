@@ -2,7 +2,6 @@ package main
 
 import (
 	"bufio"
-	"fmt"
 	"os"
 	"regexp"
 	"strconv"
@@ -82,7 +81,7 @@ func StartLogMonitoring(settings *Settings, loglines chan LogLine) {
 		// Make sure logtype is set. If it's not, no point parsing as we can't
 		// get the values anyways.
 		if len(logFile.Regex) <= 0 {
-			print("No LogType was specified for this log. Cannot monitor")
+			lLog.Print("No LogType was specified for this log. Cannot monitor")
 			continue
 		}
 
@@ -123,7 +122,7 @@ func monitorLog(logFile LogFile, loglines chan LogLine) {
 
 		_, err := f.Read(FirstFewLines)
 		if err != nil {
-			fmt.Println(err)
+			lLog.Print(err)
 		}
 
 		FirstFewLinesS := string(FirstFewLines)
@@ -139,7 +138,7 @@ func monitorLog(logFile LogFile, loglines chan LogLine) {
 
 		// Get the unread portion of the log
 		var lengthToRead = fi.Size() - logFile.LastByteRead
-		fmt.Printf("Unread portion of log is %d", lengthToRead)
+		lLog.Print("Unread portion of log is %d", lengthToRead)
 
 		// If the pending length of the log exceeds 1MB, we will skip over
 		// a big part of the log and start reading at the last 1MB
@@ -244,12 +243,12 @@ func monitorLog(logFile LogFile, loglines chan LogLine) {
 			if then_pos > 0 {
 				then_part := condition[then_pos:len(condition)]
 				condition = condition[0 : then_pos-1] // remove the THEN part from condition
-				print("Then condition not working yet " + then_part)
+				lLog.Print("Then condition not working yet " + then_part)
 			}
 
 			expression, err := govaluate.NewEvaluableExpression(condition)
 			if err != nil {
-				print("Could not evaluate expression " + condition)
+				lLog.Print("Could not evaluate expression " + condition)
 				continue
 			}
 

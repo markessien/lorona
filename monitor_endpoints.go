@@ -40,7 +40,7 @@ func StartEndpointMonitoring(settings *Settings, uptimes chan UptimeResponse) {
 			// Discover the check frequency
 			duration, err := time.ParseDuration(uptimeRequest.CheckInterval)
 			if err != nil {
-				print("Could not monitor endpoint: " + uptimeRequest.Endpoint + " - Check duration")
+				lLog.Print("Could not monitor endpoint: " + uptimeRequest.Endpoint + " - Check duration")
 			} else {
 
 				// Start the go-routine that will do the monitoring

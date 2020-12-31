@@ -3,7 +3,6 @@ package main
 import (
 	"time"
 
-	"fmt"
 	"strconv"
 )
 
@@ -31,5 +30,5 @@ func ttoa(t time.Time) string {
 
 // Print ersatz
 func print(str string) {
-	fmt.Println(str)
+	lLog.Print(str)
 }

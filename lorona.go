@@ -3,11 +3,10 @@ package main
 import (
 	"encoding/json"
 	"flag"
-	"fmt"
 	"time"
-
-	"github.com/rs/zerolog/log"
 )
+
+var lLog *Logger
 
 // This contains the result format that will be converted to json
 // and sent to the remove receiver.
@@ -25,17 +24,21 @@ type Results struct {
 
 // Let's get started!
 func main() {
-	log.Print("Welcome to Lorona!")
+
+	logConfig := LogConfig{true, true, true, "c:/logs", "lorona.log", 1024 * 1024, 10, 60 * 60 * 24 * 30}
+	lLog = ConfigureLogging(logConfig)
+
+	lLog.Print("Welcome to Lorona!")
 
 	settingsFilePtr := flag.String("settings", "settings.yaml", "Location of the settings file")
 	flag.Parse()
 
 	settings, err := LoadSettings(*settingsFilePtr)
 	if err != nil {
-		log.Fatal().Err(err).Msg("Could not load settings file")
+		lLog.Fatal().Err(err).Msg("Could not load settings file")
 	}
 
-	fmt.Println("Lorona for package: " + settings.ContainerName + ". Settings File is " + *settingsFilePtr)
+	lLog.Print("Lorona for package: " + settings.ContainerName + ". Settings File is " + *settingsFilePtr)
 
 	process(settings)
 }
@@ -85,7 +88,7 @@ func process(settings *Settings) {
 				logline.Description = logline.Description[0:20]
 			}
 
-			fmt.Printf("Time: %s Error Level: %s Description: %s\n", logline.TimeStamp, logline.Severity, description)
+			lLog.Print("Time: %s Error Level: %s Description: %s\n", logline.TimeStamp, logline.Severity, description)
 			results.LoglineList = append(results.LoglineList, logline)
 			UpdateMetrics(&results)
 		case uptime := <-uptimes:
@@ -106,7 +109,7 @@ func process(settings *Settings) {
 		default:
 
 			s, _ := json.Marshal(results)
-			fmt.Println(string(s))
+			lLog.Print(string(s))
 			time.Sleep(5 * time.Second)
 
 			ResetResult(settings, &results)

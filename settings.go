@@ -3,10 +3,14 @@ package main
 import (
 	"bufio"
 	"encoding/gob"
-	"fmt"
+	"io"
 	"os"
+	"path"
 	"strings"
 
+	"github.com/rs/zerolog"
+	"github.com/rs/zerolog/log"
+	"gopkg.in/natefinch/lumberjack.v2"
 	"gopkg.in/yaml.v2"
 )
 
@@ -21,6 +25,18 @@ type Settings struct {
 	SysMonitorRequest    SystemMonitorRequest   `yaml:"system"`                // Requests for the system parameters we want to monitor
 	BackupMonitorRequest []BackupMonitorRequest `yaml:"backups-monitor"`       // Requests for the log files we want to monitor
 	ObservedBackupFiles  []string               // This is where we store the backup files we have seen in our backup folders already
+}
+
+// Configuration for logging
+type LogConfig struct {
+	ConsoleLoggingEnabled bool
+	EncodeLogsAsJson      bool
+	FileLoggingEnabled    bool
+	Directory             string
+	Filename              string
+	MaxSize               int
+	MaxBackups            int
+	MaxAge                int
 }
 
 // Load settings from the settings.yaml file. All the settings are taken
@@ -54,7 +70,7 @@ func LoadSettings(settingsFile string) (*Settings, error) {
 			settings.UptimeRequestList[i].CheckInterval = "5m" // 5 minutes
 		}
 
-		fmt.Printf("Request to monitor endpoint: " + settings.UptimeRequestList[i].Endpoint + " @ " + settings.UptimeRequestList[i].CheckInterval + "\n")
+		lLog.Print("Request to monitor endpoint: " + settings.UptimeRequestList[i].Endpoint + " @ " + settings.UptimeRequestList[i].CheckInterval + "\n")
 	}
 
 	// Set sensible defaults for logs
@@ -69,10 +85,10 @@ func LoadSettings(settingsFile string) (*Settings, error) {
 
 		_, err := os.Stat(settings.LogFiles[i].Filepath)
 		if os.IsNotExist(err) {
-			print("WARNING: File " + settings.LogFiles[i].Filepath + " does not exist!")
+			lLog.Print("WARNING: File " + settings.LogFiles[i].Filepath + " does not exist!")
 		}
 
-		fmt.Printf("Request to monitor logfile: " + settings.LogFiles[i].Filepath + " @ " + settings.LogFiles[i].AlertInterval + "\n")
+		lLog.Print("Request to monitor logfile: " + settings.LogFiles[i].Filepath + " @ " + settings.LogFiles[i].AlertInterval + "\n")
 	}
 
 	SaveData(settings)
@@ -128,7 +144,7 @@ func LoadData(settings *Settings) error {
 
 	dataFile, err := os.Open(settings.DataFile)
 	if err != nil {
-		fmt.Println(err)
+		lLog.Print(err)
 		return err
 	}
 
@@ -138,7 +154,7 @@ func LoadData(settings *Settings) error {
 	err = dataDecoder.Decode(&dataSettings)
 
 	if err != nil {
-		fmt.Println(err)
+		lLog.Print(err)
 		return err
 	}
 
@@ -174,7 +190,7 @@ func SaveData(settings *Settings) error {
 	dataFile, err := os.Create(settings.DataFile)
 
 	if err != nil {
-		fmt.Println(err)
+		lLog.Print(err)
 		return err
 	}
 
@@ -185,4 +201,59 @@ func SaveData(settings *Settings) error {
 	dataFile.Close()
 
 	return nil
+}
+
+type Logger struct {
+	*zerolog.Logger
+}
+
+// Configure sets up the logging framework
+//
+// In production, the container logs will be collected and file logging should be disabled. However,
+// during development it's nicer to see logs as text and optionally write to a file when debugging
+// problems in the containerized pipeline
+//
+// The output log file will be located at /var/log/service-xyz/service-xyz.log and
+// will be rolled according to configuration set.
+func ConfigureLogging(config LogConfig) *Logger {
+	var writers []io.Writer
+
+	if config.ConsoleLoggingEnabled {
+		writers = append(writers, zerolog.ConsoleWriter{Out: os.Stderr})
+	}
+	if config.FileLoggingEnabled {
+		writers = append(writers, newRollingFile(config))
+	}
+	mw := io.MultiWriter(writers...)
+
+	// zerolog.SetGlobalLevel(zerolog.DebugLevel)
+	logger := zerolog.New(mw).With().Timestamp().Logger()
+
+	logger.Info().
+		Bool("fileLogging", config.FileLoggingEnabled).
+		Bool("jsonLogOutput", config.EncodeLogsAsJson).
+		Str("logDirectory", config.Directory).
+		Str("fileName", config.Filename).
+		Int("maxSizeMB", config.MaxSize).
+		Int("maxBackups", config.MaxBackups).
+		Int("maxAgeInDays", config.MaxAge).
+		Msg("logging configured")
+
+	return &Logger{
+		Logger: &logger,
+	}
+}
+
+func newRollingFile(config LogConfig) io.Writer {
+	if err := os.MkdirAll(config.Directory, 0744); err != nil {
+		log.Error().Err(err).Str("path", config.Directory).Msg("can't create log directory")
+		return nil
+	}
+
+	return &lumberjack.Logger{
+		Filename:   path.Join(config.Directory, config.Filename),
+		MaxBackups: config.MaxBackups, // files
+		MaxSize:    config.MaxSize,    // megabytes
+		MaxAge:     config.MaxAge,     // days
+	}
 }

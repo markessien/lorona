@@ -82,7 +82,7 @@ func StartSystemMonitoring(settings *Settings, sysinfos chan SysMonitorInfo) err
 
 	duration, err := time.ParseDuration(settings.SysMonitorRequest.CheckInterval)
 	if err != nil {
-		print("Could not parse requested interval: " + settings.SysMonitorRequest.CheckInterval)
+		lLog.Print("Could not parse requested interval: " + settings.SysMonitorRequest.CheckInterval)
 	} else {
 		go monitorSystem(settings.SysMonitorRequest, duration, sysinfos)
 	}
