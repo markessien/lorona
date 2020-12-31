@@ -1,5 +1,4 @@
 # Binaries for programs and plugins
-*.exe
 *.exe~
 *.dll
 *.so
@@ -17,3 +16,5 @@ private_logs
 lorona.dat
 known_backup_files.dat
 __debug_bin
+settings.yaml
+./lorona.exe

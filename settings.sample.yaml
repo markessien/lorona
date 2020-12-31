@@ -82,27 +82,10 @@ system:
   check-interval: 30s
 
   drivespace:
-    alert-level: 50GB
+    alert-when-below: 50GB
     repeat-alert: daily
     locations:
-      - c:/
-      - d:/
-      - e:/
-      - f:/
-      - g:/
-      - k:/
-      - n:/
-      - o:/
-      - p:/
-      - q:/
-      - r:/
-      - s:/
-      - t:/
-      - u:/
-      - v:/
-      - w:/
-      - x:/
-      - y:/
+      - /home/
 
 
   cpu:

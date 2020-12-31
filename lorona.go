@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"flag"
 	"fmt"
 	"log"
 	"time"
@@ -21,20 +22,24 @@ type Results struct {
 	LogSummary           map[string]LogSummary
 }
 
+// Let's get started!
 func main() {
 	fmt.Println("Welcome to Lorona!")
 
-	settings, err := LoadSettings("settings.yaml")
+	settingsFilePtr := flag.String("settings", "settings.yaml", "Location of the settings file")
+	flag.Parse()
+
+	settings, err := LoadSettings(*settingsFilePtr)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	fmt.Println("Lorona for package: " + settings.ContainerName)
+	fmt.Println("Lorona for package: " + settings.ContainerName + ". Settings File is " + *settingsFilePtr)
 
-	// StartSystemMonitoring(settings)
 	process(settings)
 }
 
+// This function turns on all the monitoring threads
 func process(settings *Settings) {
 
 	// Create a channel queue that is as large as the number of threads we have.
